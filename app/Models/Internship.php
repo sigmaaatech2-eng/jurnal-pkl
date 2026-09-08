@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Journal;
+
+class Internship extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'student_id',
+        'mentor_id',
+        'teacher_id',
+        'company_name',
+        'company_address',
+        'start_date',
+        'end_date',
+        'status',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'end_date' => 'date',
+        ];
+    }
+
+    /**
+     * Relasi ke siswa.
+     */
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'student_id');
+    }
+
+    /**
+     * Relasi ke mentor.
+     */
+    public function mentor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'mentor_id');
+    }
+
+    /**
+     * Relasi ke guru pembimbing.
+     */
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    
+    public function journals(): HasMany
+    {
+        return $this->hasMany(Journal::class);
+    }
+
+    /**
+     * Semua absensi yang terkait dengan PKL ini.
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+}

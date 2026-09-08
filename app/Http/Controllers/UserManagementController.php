@@ -1,0 +1,113 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+
+class UserManagementController extends Controller
+{
+    /**
+     * Menampilkan semua pengguna yang dikelola Admin Sekolah.
+     */
+    public function index(Request $request)
+    {
+        $allowedRoles = [
+            'siswa',
+            'guru_pembimbing',
+            'mentor',
+            'kepala_sekolah',
+            'admin_sekolah',
+        ];
+
+        $query = User::whereHas('roles', function ($query) use ($allowedRoles) {
+            $query->whereIn('name', $allowedRoles);
+        })->with('roles');
+
+        // Filter berdasarkan peran
+        if ($request->filled('role') && $request->role !== 'all' && in_array($request->role, $allowedRoles)) {
+            $query->role($request->role);
+        }
+
+        // Pencarian nama atau email
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->latest()->paginate(15)->withQueryString();
+
+        // Hitung total per role untuk ringkasan di dashboard
+        $counts = [
+            'all'             => User::whereHas('roles', fn($q) => $q->whereIn('name', $allowedRoles))->count(),
+            'siswa'           => User::role('siswa')->count(),
+            'guru_pembimbing' => User::role('guru_pembimbing')->count(),
+            'mentor'          => User::role('mentor')->count(),
+            'kepala_sekolah'  => User::role('kepala_sekolah')->count(),
+        ];
+
+        return view('admin-sekolah.users.index', compact('users', 'counts'));
+    }
+
+
+    /**
+     * Form tambah pengguna.
+     */
+    public function create()
+    {
+        return view('admin-sekolah.users.create');
+    }
+
+
+    /**
+     * Simpan pengguna baru.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                'unique:users,email',
+            ],
+            'role' => [
+                'required',
+                'in:siswa,guru_pembimbing,mentor,kepala_sekolah',
+            ],
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+            ],
+        ], [
+            'name.required'     => 'Nama lengkap pengguna wajib diisi.',
+            'email.required'    => 'Alamat email wajib diisi.',
+            'email.email'       => 'Format email tidak valid.',
+            'email.unique'      => 'Alamat email ini sudah terdaftar di sistem.',
+            'role.required'     => 'Pilih salah satu peran pengguna.',
+            'role.in'           => 'Peran yang dipilih tidak valid.',
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.min'      => 'Kata sandi minimal terdiri dari 8 karakter.',
+            'password.confirmed'=> 'Konfirmasi kata sandi tidak cocok.',
+        ]);
+
+        $user = User::create([
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        $user->syncRoles([$validated['role']]);
+
+        return redirect()
+            ->route('admin-sekolah.users.index')
+            ->with('success', "Akun pengguna {$user->name} dengan peran " . str_replace('_', ' ', $validated['role']) . " berhasil dibuat.");
+    }
+}
