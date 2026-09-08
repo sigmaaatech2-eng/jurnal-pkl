@@ -53,6 +53,14 @@ Route::post('/register', function (Request $request) {
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'email', 'max:255', 'unique:users,email'],
         'password' => ['required', 'confirmed', 'min:8'],
+    ], [
+        'name.required' => 'Nama lengkap wajib diisi.',
+        'email.required' => 'Alamat email wajib diisi.',
+        'email.email' => 'Format email tidak valid.',
+        'email.unique' => 'Email ini sudah terdaftar di sistem.',
+        'password.required' => 'Password wajib diisi.',
+        'password.min' => 'Password minimal terdiri dari 8 karakter.',
+        'password.confirmed' => 'Konfirmasi password tidak cocok.',
     ]);
 
     $user = User::create([
@@ -71,7 +79,7 @@ Route::post('/register', function (Request $request) {
 
     return redirect()
         ->route('dashboard')
-        ->with('success', 'Akun siswa berhasil dibuat.');
+        ->with('success', 'Akun siswa berhasil didaftarkan. Selamat datang di Jurnal PKL Online.');
 
 })->middleware('guest')->name('register.store');
 
@@ -92,9 +100,15 @@ Route::post('/login', function (Request $request) {
     $credentials = $request->validate([
         'email' => ['required', 'email'],
         'password' => ['required'],
+    ], [
+        'email.required' => 'Alamat email wajib diisi.',
+        'email.email' => 'Format email tidak valid.',
+        'password.required' => 'Password wajib diisi.',
     ]);
 
-    if (Auth::attempt($credentials)) {
+    $remember = $request->boolean('remember');
+
+    if (Auth::attempt($credentials, $remember)) {
 
         $request->session()->regenerate();
 
@@ -105,7 +119,7 @@ Route::post('/login', function (Request $request) {
 
     return back()
         ->withErrors([
-            'email' => 'Email atau password salah.',
+            'email' => 'Email atau password yang Anda masukkan tidak sesuai.',
         ])
         ->onlyInput('email');
 
