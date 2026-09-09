@@ -405,7 +405,7 @@
                             </div>
                         </div>
                         <span class="shrink-0 text-xs font-medium text-slate-400">
-                            {{ $log->created_at->diffForHumans() }}
+                            {{ $log->created_at ? $log->created_at->diffForHumans() : '-' }}
                         </span>
                     </div>
                 @endforeach

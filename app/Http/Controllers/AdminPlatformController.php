@@ -45,18 +45,27 @@ class AdminPlatformController extends Controller
             ->take(10)
             ->get();
 
-        // Statistik per bulan (12 bulan terakhir) untuk chart
+        // Statistik per bulan (12 bulan terakhir) untuk chart - efisien dengan 2 query
+        $startPeriod = now()->subMonths(11)->startOfMonth();
+
+        $usersByMonth = User::where('created_at', '>=', $startPeriod)
+            ->pluck('created_at')
+            ->groupBy(fn ($date) => $date->format('Y-m'))
+            ->map->count();
+
+        $subsByMonth = SchoolSubscription::where('created_at', '>=', $startPeriod)
+            ->pluck('created_at')
+            ->groupBy(fn ($date) => $date->format('Y-m'))
+            ->map->count();
+
         $monthlyStats = [];
         for ($i = 11; $i >= 0; $i--) {
             $month = now()->subMonths($i);
+            $key = $month->format('Y-m');
             $monthlyStats[] = [
                 'label' => $month->format('M Y'),
-                'users' => User::whereYear('created_at', $month->year)
-                    ->whereMonth('created_at', $month->month)
-                    ->count(),
-                'subscriptions' => SchoolSubscription::whereYear('created_at', $month->year)
-                    ->whereMonth('created_at', $month->month)
-                    ->count(),
+                'users' => $usersByMonth[$key] ?? 0,
+                'subscriptions' => $subsByMonth[$key] ?? 0,
             ];
         }
 
@@ -175,7 +184,7 @@ class AdminPlatformController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|integer|min:0',
             'max_students' => 'required|integer|min:1',
-            'max_teachers' => 'required|integer|min=1',
+            'max_teachers' => 'required|integer|min:1',
             'max_mentors' => 'required|integer|min:1',
             'duration_months' => 'required|integer|min:1',
             'features' => 'nullable|array',
@@ -505,15 +514,20 @@ class AdminPlatformController extends Controller
             'total_revenue' => PaymentHistory::where('status', 'paid')->sum('amount'),
         ];
 
-        // Growth per bulan (12 bulan)
+        // Growth per bulan (12 bulan) - efisien dengan 1 query
+        $startPeriod = now()->subMonths(11)->startOfMonth();
+        $usersByMonth = User::where('created_at', '>=', $startPeriod)
+            ->pluck('created_at')
+            ->groupBy(fn ($date) => $date->format('Y-m'))
+            ->map->count();
+
         $userGrowth = [];
         for ($i = 11; $i >= 0; $i--) {
             $month = now()->subMonths($i);
+            $key = $month->format('Y-m');
             $userGrowth[] = [
                 'label' => $month->format('M Y'),
-                'count' => User::whereYear('created_at', $month->year)
-                    ->whereMonth('created_at', $month->month)
-                    ->count(),
+                'count' => $usersByMonth[$key] ?? 0,
             ];
         }
 
