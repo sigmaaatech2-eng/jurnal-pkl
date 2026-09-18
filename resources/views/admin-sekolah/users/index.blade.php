@@ -41,6 +41,16 @@
         </div>
     @endif
 
+    {{-- ERROR ALERT --}}
+    @if (session('error'))
+        <div class="mb-6 flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <span class="font-medium">{{ session('error') }}</span>
+        </div>
+    @endif
+
     {{-- STATS CARDS RINGKASAN ROLE --}}
     <div class="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {{-- Card Semua --}}
@@ -168,6 +178,7 @@
                             <th class="px-6 py-4">Email</th>
                             <th class="px-6 py-4">Peran (Role)</th>
                             <th class="px-6 py-4">Terdaftar</th>
+                            <th class="px-6 py-4 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -253,6 +264,21 @@
                                 <td class="whitespace-nowrap px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
                                     {{ $user->created_at ? $user->created_at->translatedFormat('d M Y') : '-' }}
                                 </td>
+
+                                {{-- Aksi --}}
+                                <td class="whitespace-nowrap px-6 py-4 text-center">
+                                    <button
+                                        type="button"
+                                        onclick="openResetModal({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ route('admin-sekolah.users.reset-password', $user) }}')"
+                                        class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 active:scale-95 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
+                                        title="Reset Password"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 21.75 8.25Z" />
+                                        </svg>
+                                        Reset Password
+                                    </button>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -266,5 +292,184 @@
             @endif
         @endif
     </div>
+
+
+    {{-- ============================================================ --}}
+    {{-- MODAL RESET PASSWORD                                          --}}
+    {{-- ============================================================ --}}
+    <div
+        id="resetPasswordModal"
+        class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="resetModalTitle"
+    >
+        {{-- Backdrop --}}
+        <div
+            id="resetModalBackdrop"
+            class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onclick="closeResetModal()"
+        ></div>
+
+        {{-- Panel --}}
+        <div class="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-in">
+
+            {{-- Header --}}
+            <div class="flex items-start justify-between border-b border-slate-100 p-6 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 0 1 21.75 8.25Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 id="resetModalTitle" class="font-bold text-slate-800 dark:text-white">Reset Password</h2>
+                        <p id="resetModalSubtitle" class="text-xs text-slate-500 dark:text-slate-400"></p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onclick="closeResetModal()"
+                    class="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Form --}}
+            <form id="resetPasswordForm" method="POST" action="" class="p-6 space-y-5">
+                @csrf
+
+                {{-- Info Banner --}}
+                <div class="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5 dark:border-amber-500/20 dark:bg-amber-500/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                    <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                        Anda akan mengganti password pengguna ini. Sampaikan password baru kepada pengguna secara langsung agar mereka bisa login kembali.
+                    </p>
+                </div>
+
+                {{-- Password Baru --}}
+                <div>
+                    <label for="new_password" class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Password Baru <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="password"
+                            id="new_password"
+                            name="new_password"
+                            placeholder="Minimal 8 karakter"
+                            autocomplete="new-password"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm text-slate-800 placeholder-slate-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-800"
+                        >
+                        <button type="button" onclick="togglePassword('new_password', 'eyeIcon1')" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <svg id="eyeIcon1" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </button>
+                    </div>
+                    @error('new_password')
+                        <p class="mt-1 text-xs text-rose-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Konfirmasi Password --}}
+                <div>
+                    <label for="new_password_confirmation" class="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Konfirmasi Password Baru <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="password"
+                            id="new_password_confirmation"
+                            name="new_password_confirmation"
+                            placeholder="Ulangi password baru"
+                            autocomplete="new-password"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 pr-10 text-sm text-slate-800 placeholder-slate-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:bg-slate-800"
+                        >
+                        <button type="button" onclick="togglePassword('new_password_confirmation', 'eyeIcon2')" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                            <svg id="eyeIcon2" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Action Buttons --}}
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        onclick="closeResetModal()"
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        class="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-500/20 transition hover:-translate-y-0.5 hover:bg-amber-600 active:scale-95"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        Simpan Password Baru
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- MODAL SCRIPTS --}}
+    <style>
+        .animate-in {
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+
+    <script>
+        function openResetModal(userId, userName, actionUrl) {
+            const modal = document.getElementById('resetPasswordModal');
+            const form  = document.getElementById('resetPasswordForm');
+            const subtitle = document.getElementById('resetModalSubtitle');
+
+            form.action = actionUrl;
+            subtitle.textContent = 'Pengguna: ' + userName;
+
+            // Reset input fields
+            document.getElementById('new_password').value = '';
+            document.getElementById('new_password_confirmation').value = '';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('resetPasswordModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+        }
+
+        // Tutup modal saat tekan Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeResetModal();
+        });
+    </script>
 
 </x-layouts.app>

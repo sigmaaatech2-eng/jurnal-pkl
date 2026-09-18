@@ -292,6 +292,9 @@ Route::middleware(['auth', 'role:admin_sekolah'])
         Route::post('/users', [UserManagementController::class, 'store'])
             ->name('users.store');
 
+        Route::post('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])
+            ->name('users.reset-password');
+
 
         // Data PKL
         Route::get('/internships', [InternshipController::class, 'index'])

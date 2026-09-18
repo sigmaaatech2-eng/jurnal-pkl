@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class UserManagementController extends Controller
 {
@@ -109,5 +110,39 @@ class UserManagementController extends Controller
         return redirect()
             ->route('admin-sekolah.users.index')
             ->with('success', "Akun pengguna {$user->name} dengan peran " . str_replace('_', ' ', $validated['role']) . " berhasil dibuat.");
+    }
+
+
+    /**
+     * Reset password pengguna oleh Admin Sekolah.
+     * Admin Sekolah tidak dapat mereset password Admin Platform.
+     */
+    public function resetPassword(Request $request, User $user)
+    {
+        // Cegah admin sekolah mereset password admin_platform
+        if ($user->hasRole('admin_platform')) {
+            return back()->with('error', 'Anda tidak memiliki izin untuk mengubah password Admin Platform.');
+        }
+
+        $validated = $request->validate([
+            'new_password' => [
+                'required',
+                'string',
+                Password::min(8),
+                'confirmed',
+            ],
+        ], [
+            'new_password.required'  => 'Password baru wajib diisi.',
+            'new_password.min'       => 'Password baru minimal terdiri dari 8 karakter.',
+            'new_password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($validated['new_password']),
+        ]);
+
+        return redirect()
+            ->route('admin-sekolah.users.index')
+            ->with('success', "Password pengguna {$user->name} berhasil diubah.");
     }
 }
