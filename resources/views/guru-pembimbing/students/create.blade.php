@@ -78,15 +78,12 @@
                     >
                         <option value="" class="bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100">-- Pilih Siswa (Role Siswa) --</option>
                         @foreach ($students as $student)
-                            @php
-                                $studentClass = $student->schoolClass->name ?? $student->kelas;
-                            @endphp
                             <option
                                 value="{{ $student->id }}"
                                 class="bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100"
                                 {{ old('student_id') == $student->id ? 'selected' : '' }}
                             >
-                                {{ $student->name }} — {{ $studentClass ? '[' . $studentClass . ']' : '(Belum Ada Kelas)' }} ({{ $student->email }})
+                                {{ $student->name }} ({{ $student->email }})
                             </option>
                         @endforeach
                     </select>
