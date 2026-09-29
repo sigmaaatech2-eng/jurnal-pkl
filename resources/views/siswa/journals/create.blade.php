@@ -292,6 +292,45 @@
 
                     </div>
 
+                    {{-- LINK (OPSIONAL) --}}
+                    <div class="mt-6">
+
+                        <label
+                            for="link"
+                            class="mb-2 block text-sm font-semibold
+                            text-slate-700 dark:text-slate-300"
+                        >
+                            Link Tugas / Proyek / Referensi (Opsional)
+                        </label>
+
+                        <div class="relative">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                                </svg>
+                            </div>
+                            <input
+                                type="url"
+                                id="link"
+                                name="link"
+                                value="{{ old('link') }}"
+                                placeholder="https://github.com/... atau https://drive.google.com/..."
+                                class="w-full rounded-xl border border-slate-200
+                                bg-white py-3 pl-11 pr-4 text-sm text-slate-800
+                                placeholder:text-slate-400
+                                outline-none transition
+                                focus:border-blue-500 focus:ring-4
+                                focus:ring-blue-500/10
+                                dark:border-slate-700 dark:bg-slate-800
+                                dark:text-white dark:placeholder:text-slate-500"
+                            >
+                        </div>
+                        <p class="mt-1.5 text-xs text-slate-400">
+                            Tautan GitHub, Google Drive, Figma, Notion, atau demo website.
+                        </p>
+
+                    </div>
+
                 </div>
 
 
@@ -365,7 +404,7 @@
                                 class="mt-1 text-xs leading-5
                                 text-slate-500 dark:text-slate-400"
                             >
-                                Tambahkan bukti kegiatan jika diperlukan.
+                                Tambahkan bukti kegiatan (gambar, dokumen, atau file ZIP).
                             </p>
 
                         </div>
@@ -414,7 +453,7 @@
                             <span
                                 class="mt-1 text-xs text-slate-400"
                             >
-                                PDF, DOC, DOCX, JPG, JPEG, PNG
+                                PDF, DOC, DOCX, JPG, JPEG, PNG, ZIP
                             </span>
 
 
@@ -422,7 +461,7 @@
                                 type="file"
                                 id="attachment"
                                 name="attachment"
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip"
                                 class="hidden"
                                 @change="handleFile($event)"
                             >
@@ -458,7 +497,7 @@
                             class="mt-4 text-xs leading-5
                             text-slate-400 dark:text-slate-500"
                         >
-                            Ukuran maksimal file 5 MB.
+                            Ukuran maksimal file 20 MB.
                         </p>
 
                     </div>

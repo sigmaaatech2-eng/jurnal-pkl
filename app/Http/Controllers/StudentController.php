@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Internship;
 use App\Models\User;
+use App\Models\SchoolMajor;
+use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -88,7 +90,9 @@ class StudentController extends Controller
      */
     public function create()
     {
-        return view('admin-sekolah.students.create');
+        $majors  = SchoolMajor::active()->orderBy('name')->get();
+        $classes = SchoolClass::active()->with('major')->orderBy('name')->get();
+        return view('admin-sekolah.students.create', compact('majors', 'classes'));
     }
 
     /**
@@ -99,15 +103,23 @@ class StudentController extends Controller
         $validated = $request->validate([
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
-            'jurusan'  => ['nullable', 'string', 'max:100'],
-            'kelas'    => ['nullable', 'string', 'max:50'],
+            'jurusan'  => ['nullable'],
+            'kelas'    => ['nullable', 'string', 'max:100'],
             'password' => ['required', 'min:8', 'confirmed'],
         ]);
+
+        $jurusanValue = $validated['jurusan'] ?? null;
+        if (!empty($jurusanValue) && is_numeric($jurusanValue)) {
+            $majorModel = SchoolMajor::find($jurusanValue);
+            if ($majorModel) {
+                $jurusanValue = $majorModel->name;
+            }
+        }
 
         $student = User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
-            'jurusan'  => $validated['jurusan'] ?? null,
+            'jurusan'  => $jurusanValue,
             'kelas'    => $validated['kelas'] ?? null,
             'password' => Hash::make($validated['password']),
         ]);

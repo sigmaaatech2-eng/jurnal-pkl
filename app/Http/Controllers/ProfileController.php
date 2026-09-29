@@ -30,6 +30,8 @@ class ProfileController extends Controller
             'stats' => [],
             'internship' => null,
             'relatedUsers' => collect(),
+            'majors' => collect(),
+            'classes' => collect(),
         ];
 
         switch ($role) {
@@ -39,6 +41,8 @@ class ProfileController extends Controller
                     ->latest()
                     ->first();
 
+                $data['majors'] = \App\Models\SchoolMajor::active()->orderBy('name')->get();
+                $data['classes'] = \App\Models\SchoolClass::active()->with('major')->orderBy('name')->get();
                 $data['internship'] = $internship;
                 $data['stats'] = [
                     'total_journals' => $user->journals()->count(),
@@ -110,7 +114,8 @@ class ProfileController extends Controller
         if ($role === 'siswa') {
             $rules['nisn'] = ['nullable', 'string', 'max:30'];
             $rules['jurusan'] = ['nullable', 'string', 'max:100'];
-            $rules['kelas'] = ['nullable', 'string', 'max:50'];
+            $rules['kelas'] = ['nullable', 'string', 'max:100'];
+            $rules['school_class_id'] = ['nullable', 'exists:school_classes,id'];
         } elseif ($role === 'guru_pembimbing') {
             $rules['nip'] = ['nullable', 'string', 'max:50'];
             $rules['bidang'] = ['nullable', 'string', 'max:100'];
@@ -131,6 +136,27 @@ class ProfileController extends Controller
             }
 
             $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        if ($role === 'siswa') {
+            if (!empty($validated['jurusan']) && is_numeric($validated['jurusan'])) {
+                $majorModel = \App\Models\SchoolMajor::find($validated['jurusan']);
+                if ($majorModel) {
+                    $validated['jurusan'] = $majorModel->name;
+                }
+            }
+
+            if (!empty($validated['school_class_id'])) {
+                $classModel = \App\Models\SchoolClass::find($validated['school_class_id']);
+                if ($classModel) {
+                    $validated['kelas'] = $classModel->name;
+                }
+            } elseif (!empty($validated['kelas'])) {
+                $classModel = \App\Models\SchoolClass::where('name', $validated['kelas'])->first();
+                if ($classModel) {
+                    $validated['school_class_id'] = $classModel->id;
+                }
+            }
         }
 
         $user->fill($validated);

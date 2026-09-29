@@ -227,10 +227,128 @@
 
                     <div class="border-t border-slate-100 pt-5 dark:border-slate-800"></div>
 
-                    {{-- 3. KEAMANAN & KATA SANDI --}}
+                    {{-- 3. KELAS & JURUSAN (hanya untuk Siswa) --}}
+                    @php
+                        $classesData = ($classes ?? collect())->map(function ($c) {
+                            return [
+                                'id' => $c->id,
+                                'name' => $c->name,
+                                'grade' => $c->grade,
+                                'major_id' => $c->school_major_id,
+                            ];
+                        })->values();
+                    @endphp
+                    <script>
+                        function academicSection() {
+                            return {
+                                role: '{{ old('role', 'siswa') }}',
+                                selectedMajorId: '{{ old('major_id', '') }}',
+                                selectedClass: '{{ old('kelas', '') }}',
+                                allClasses: @json($classesData),
+                                get filteredClasses() {
+                                    if (!this.selectedMajorId) return this.allClasses;
+                                    return this.allClasses.filter(c => String(c.major_id) === String(this.selectedMajorId));
+                                },
+                                get showSection() { return this.role === 'siswa'; }
+                            };
+                        }
+                    </script>
+                    <div class="space-y-4" id="section-kelas-jurusan"
+                        x-data="academicSection()"
+                        x-show="showSection"
+                        x-transition
+                    >
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            3. Data Akademik Siswa
+                        </h3>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 -mt-2">
+                            Isi data kelas dan jurusan siswa agar bisa difilter oleh guru pembimbing.
+                        </p>
+
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {{-- Jurusan --}}
+                            <div>
+                                <label for="jurusan" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                    Jurusan
+                                </label>
+                                @if ($majors->isNotEmpty())
+                                    <select
+                                        name="jurusan"
+                                        id="jurusan"
+                                        x-model="selectedMajorId"
+                                        @change="selectedMajorId = $event.target.value"
+                                        class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-4 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 @error('jurusan') border-rose-500 @enderror"
+                                    >
+                                        <option value="">— Pilih Jurusan —</option>
+                                        @foreach ($majors as $major)
+                                            <option
+                                                value="{{ $major->id }}"
+                                                data-name="{{ $major->name }}"
+                                                @selected(old('jurusan') == $major->id)
+                                            >{{ $major->name }}{{ $major->code ? " ({$major->code})" : '' }}</option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    <input type="text" name="jurusan" id="jurusan" value="{{ old('jurusan') }}"
+                                        placeholder="Contoh: Teknik Komputer dan Jaringan"
+                                        class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-4 text-sm text-slate-800 placeholder-slate-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                    <p class="mt-1 text-[11px] text-amber-500">Belum ada data jurusan.
+                                        <a href="{{ route('admin-sekolah.school-data.majors.create') }}" class="font-bold underline">Tambah jurusan</a> terlebih dahulu.
+                                    </p>
+                                @endif
+                                @error('jurusan') <p class="mt-1 text-xs text-rose-500 font-medium">{{ $message }}</p> @enderror
+                            </div>
+
+                            {{-- Kelas --}}
+                            <div>
+                                <label for="kelas" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                    Kelas
+                                </label>
+                                @if ($classes->isNotEmpty())
+                                    <select
+                                        name="kelas"
+                                        id="kelas"
+                                        x-model="selectedClass"
+                                        class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-4 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 @error('kelas') border-rose-500 @enderror"
+                                    >
+                                        <option value="">— Pilih Kelas —</option>
+                                        <template x-for="cls in filteredClasses" :key="cls.id">
+                                            <option :value="cls.name" x-text="cls.name"></option>
+                                        </template>
+                                    </select>
+                                    <p class="mt-1 text-[11px] text-slate-400">Pilih jurusan terlebih dahulu untuk menyaring daftar kelas.</p>
+                                @else
+                                    <input type="text" name="kelas" id="kelas" value="{{ old('kelas') }}"
+                                        placeholder="Contoh: XII TKJ 1"
+                                        class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-4 text-sm text-slate-800 placeholder-slate-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                                    <p class="mt-1 text-[11px] text-amber-500">Belum ada data kelas.
+                                        <a href="{{ route('admin-sekolah.school-data.classes.create') }}" class="font-bold underline">Tambah kelas</a> terlebih dahulu.
+                                    </p>
+                                @endif
+                                @error('kelas') <p class="mt-1 text-xs text-rose-500 font-medium">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Script: sync role ke Alpine --}}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const radios = document.querySelectorAll('input[name="role"]');
+                            radios.forEach(radio => {
+                                radio.addEventListener('change', function () {
+                                    const section = document.getElementById('section-kelas-jurusan');
+                                    if (section && section._x_dataStack) {
+                                        section._x_dataStack[0].role = this.value;
+                                    }
+                                });
+                            });
+                        });
+                    </script>
+
+                    <div class="border-t border-slate-100 pt-5 dark:border-slate-800"></div>
                     <div class="space-y-4">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                            3. Keamanan Akun
+                            4. Keamanan Akun
                         </h3>
 
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

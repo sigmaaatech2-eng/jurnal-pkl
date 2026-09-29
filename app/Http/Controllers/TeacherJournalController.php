@@ -7,6 +7,8 @@ use App\Models\Journal;
 use App\Models\User;
 use App\Models\Internship;
 use App\Models\Attendance;
+use App\Models\SchoolMajor;
+use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\JournalReviewedNotification;
@@ -66,23 +68,112 @@ class TeacherJournalController extends Controller
     /**
      * Menampilkan daftar siswa bimbingan.
      */
-    public function students()
+    public function students(Request $request)
     {
         /** @var User $user */
         $user = Auth::user();
 
-        $internships = Internship::with([
-            'student',
+        // Ambil opsi filter dari siswa yang belum selesai PKL
+        $teacherInternships = Internship::where('teacher_id', $user->id)
+            ->where('status', '!=', 'completed')
+            ->get();
+
+        $studentIds = $teacherInternships->pluck('student_id');
+
+        $kelasList = SchoolClass::active()->orderBy('name')->pluck('name');
+        if ($kelasList->isEmpty()) {
+            $kelasList = User::whereIn('id', $studentIds)
+                ->whereNotNull('kelas')
+                ->where('kelas', '!=', '')
+                ->distinct()
+                ->orderBy('kelas')
+                ->pluck('kelas');
+        }
+
+        $jurusanList = SchoolMajor::active()->orderBy('name')->pluck('name');
+        if ($jurusanList->isEmpty()) {
+            $jurusanList = User::whereIn('id', $studentIds)
+                ->whereNotNull('jurusan')
+                ->where('jurusan', '!=', '')
+                ->distinct()
+                ->orderBy('jurusan')
+                ->pluck('jurusan');
+        }
+
+        $companyList = $teacherInternships->pluck('company_name')->unique()->filter()->values();
+
+        // Query siswa bimbingan (siswa yang sudah selesai PKL tidak ditampilkan lagi)
+        $query = Internship::with([
+            'student.schoolClass',
             'journals',
             'mentor',
         ])
         ->where('teacher_id', $user->id)
-        ->latest()
-        ->get();
+        ->where('status', '!=', 'completed');
+
+        if ($request->filled('kelas')) {
+            $query->whereHas('student', function ($q) use ($request) {
+                $q->where('kelas', $request->kelas)
+                  ->orWhere('school_class_id', $request->kelas)
+                  ->orWhereHas('schoolClass', function ($sq) use ($request) {
+                      $sq->where('name', $request->kelas);
+                  });
+            });
+        }
+
+        if ($request->filled('jurusan')) {
+            $query->whereHas('student', function ($q) use ($request) {
+                $q->where('jurusan', $request->jurusan);
+            });
+        }
+
+        if ($request->filled('company_name')) {
+            $query->where('company_name', $request->company_name);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('company_name', 'like', "%{$search}%")
+                  ->orWhereHas('student', function ($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%")
+                         ->orWhere('nisn', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Fitur sortir (khususnya sortir per kelas)
+        $sort = $request->get('sort', 'latest');
+        if ($sort === 'kelas_asc') {
+            $query->select('internships.*')
+                ->join('users', 'internships.student_id', '=', 'users.id')
+                ->leftJoin('school_classes', 'users.school_class_id', '=', 'school_classes.id')
+                ->orderByRaw('COALESCE(school_classes.name, users.kelas) ASC NULLS LAST')
+                ->orderBy('users.name', 'asc');
+        } elseif ($sort === 'kelas_desc') {
+            $query->select('internships.*')
+                ->join('users', 'internships.student_id', '=', 'users.id')
+                ->leftJoin('school_classes', 'users.school_class_id', '=', 'school_classes.id')
+                ->orderByRaw('COALESCE(school_classes.name, users.kelas) DESC NULLS LAST')
+                ->orderBy('users.name', 'asc');
+        } elseif ($sort === 'name_asc') {
+            $query->select('internships.*')
+                ->join('users', 'internships.student_id', '=', 'users.id')
+                ->orderBy('users.name', 'asc');
+        } elseif ($sort === 'name_desc') {
+            $query->select('internships.*')
+                ->join('users', 'internships.student_id', '=', 'users.id')
+                ->orderBy('users.name', 'desc');
+        } else {
+            $query->latest('internships.created_at');
+        }
+
+        $internships = $query->get();
 
         return view(
             'guru-pembimbing.students.index',
-            compact('internships')
+            compact('internships', 'kelasList', 'jurusanList', 'companyList')
         );
     }
 
@@ -96,6 +187,7 @@ class TeacherJournalController extends Controller
 
         // Siswa: hanya user dengan role siswa yang belum memiliki PKL aktif
         $students = User::role('siswa')
+            ->with('schoolClass')
             ->whereNotIn('id', $activeStudentIds)
             ->orderBy('name')
             ->get();
@@ -215,7 +307,7 @@ public function studentDetail(Internship $internship)
     }
 
     $internship->load([
-        'student',
+        'student.schoolClass',
         'journals'
     ]);
 
@@ -285,18 +377,32 @@ public function studentDetail(Internship $internship)
     }
 
     /**
-     * Export rekapitulasi PKL ke file XLSX atau CSV.
+     * Export rekapitulasi PKL ke file XLSX atau CSV (bisa pilih siswa tertentu).
      */
     public function exportRecap(Request $request)
     {
         /** @var User $user */
         $user = Auth::user();
 
-        $internships = Internship::with(['student', 'journals', 'attendances', 'mentor'])
-            ->where('teacher_id', $user->id)
-            ->get();
+        $query = Internship::with(['student', 'journals', 'attendances', 'mentor'])
+            ->where('teacher_id', $user->id);
 
-        $format   = $request->query('format', 'xlsx');
+        $selectedIds = $request->input('internship_ids');
+        if (is_string($selectedIds)) {
+            $selectedIds = array_filter(explode(',', $selectedIds));
+        }
+
+        if (!empty($selectedIds)) {
+            $query->whereIn('id', (array) $selectedIds);
+        }
+
+        $internships = $query->get();
+
+        if ($internships->isEmpty()) {
+            return back()->with('error', 'Tidak ada data siswa yang dipilih atau tersedia untuk diexport.');
+        }
+
+        $format   = $request->input('format', $request->query('format', 'xlsx'));
         $filename = 'rekap-pkl-' . now()->format('Ymd-His');
 
         $export = new RecapExport($internships, $user->name);

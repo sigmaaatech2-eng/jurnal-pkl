@@ -15,6 +15,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\HeadmasterController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminPlatformController;
+use App\Http\Controllers\SchoolDataController;
 
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -42,7 +43,9 @@ Route::get('/', function () {
 
 // Menampilkan halaman register
 Route::get('/register', function () {
-    return view('auth.register');
+    $majors  = \App\Models\SchoolMajor::active()->orderBy('name')->get();
+    $classes = \App\Models\SchoolClass::active()->with('major')->orderBy('name')->get();
+    return view('auth.register', compact('majors', 'classes'));
 })->middleware('guest')->name('register');
 
 
@@ -52,21 +55,39 @@ Route::post('/register', function (Request $request) {
     $validated = $request->validate([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+        'jurusan' => ['required'],
+        'kelas' => ['required', 'string', 'max:100'],
         'password' => ['required', 'confirmed', 'min:8'],
     ], [
         'name.required' => 'Nama lengkap wajib diisi.',
         'email.required' => 'Alamat email wajib diisi.',
         'email.email' => 'Format email tidak valid.',
         'email.unique' => 'Email ini sudah terdaftar di sistem.',
+        'jurusan.required' => 'Silakan pilih jurusan Anda.',
+        'kelas.required' => 'Silakan pilih kelas Anda.',
         'password.required' => 'Password wajib diisi.',
         'password.min' => 'Password minimal terdiri dari 8 karakter.',
         'password.confirmed' => 'Konfirmasi password tidak cocok.',
     ]);
 
+    // Jika jurusan dikirim sebagai ID major, ambil namanya
+    $jurusanValue = $validated['jurusan'];
+    if (is_numeric($validated['jurusan'])) {
+        $majorModel = \App\Models\SchoolMajor::find($validated['jurusan']);
+        if ($majorModel) {
+            $jurusanValue = $majorModel->name;
+        }
+    }
+
+    $schoolClass = \App\Models\SchoolClass::where('name', $validated['kelas'])->first();
+
     $user = User::create([
-        'name' => $validated['name'],
-        'email' => $validated['email'],
-        'password' => Hash::make($validated['password']),
+        'name'            => $validated['name'],
+        'email'           => $validated['email'],
+        'jurusan'         => $jurusanValue,
+        'kelas'           => $validated['kelas'],
+        'school_class_id' => $schoolClass?->id,
+        'password'        => Hash::make($validated['password']),
     ]);
 
     /*
@@ -305,6 +326,29 @@ Route::middleware(['auth', 'role:admin_sekolah'])
 
         Route::post('/internships', [InternshipController::class, 'store'])
             ->name('internships.store');
+
+        // Data Sekolah — Jurusan
+        Route::prefix('school-data')->name('school-data.')->group(function () {
+
+            // Jurusan
+            Route::get('/majors', [SchoolDataController::class, 'majorsIndex'])->name('majors.index');
+            Route::get('/majors/create', [SchoolDataController::class, 'majorsCreate'])->name('majors.create');
+            Route::post('/majors', [SchoolDataController::class, 'majorsStore'])->name('majors.store');
+            Route::get('/majors/{major}/edit', [SchoolDataController::class, 'majorsEdit'])->name('majors.edit');
+            Route::put('/majors/{major}', [SchoolDataController::class, 'majorsUpdate'])->name('majors.update');
+            Route::delete('/majors/{major}', [SchoolDataController::class, 'majorsDestroy'])->name('majors.destroy');
+
+            // Kelas
+            Route::get('/classes', [SchoolDataController::class, 'classesIndex'])->name('classes.index');
+            Route::get('/classes/create', [SchoolDataController::class, 'classesCreate'])->name('classes.create');
+            Route::post('/classes', [SchoolDataController::class, 'classesStore'])->name('classes.store');
+            Route::get('/classes/{class}/edit', [SchoolDataController::class, 'classesEdit'])->name('classes.edit');
+            Route::put('/classes/{class}', [SchoolDataController::class, 'classesUpdate'])->name('classes.update');
+            Route::delete('/classes/{class}', [SchoolDataController::class, 'classesDestroy'])->name('classes.destroy');
+
+            // API — dropdown dinamis
+            Route::get('/majors/{major}/classes', [SchoolDataController::class, 'classesByMajor'])->name('majors.classes');
+        });
     });
 
 
@@ -425,10 +469,8 @@ Route::middleware([
             [TeacherJournalController::class, 'recap']
         )->name('recap.index');
 
-        Route::get(
-            '/recap/export',
-            [TeacherJournalController::class, 'exportRecap']
-        )->name('recap.export');
+        Route::match(['get', 'post'], '/recap/export', [TeacherJournalController::class, 'exportRecap'])
+            ->name('recap.export');
 
     });
 
@@ -457,6 +499,7 @@ Route::middleware([
         Route::post('/journals/{journal}/validate', [MentorController::class, 'validateJournal'])->name('journals.validate');
 
         Route::post('/journals/{journal}/revision', [MentorController::class, 'requestRevision'])->name('journals.revision');
+        Route::post('/attendance-deadline', [MentorController::class, 'updateAttendanceDeadline'])->name('attendance-deadline.update');
 
     });
 

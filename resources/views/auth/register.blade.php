@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <title>Daftar Akun Siswa - Jurnal PKL Online</title>
 
@@ -47,13 +47,15 @@
     <header class="w-full px-4 py-4 sm:px-8">
         <div class="mx-auto flex max-w-6xl items-center justify-between">
             <a href="{{ url('/') }}" class="flex items-center gap-2.5 transition hover:opacity-90">
-                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
-                    <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
-                </span>
+                <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-blue-50 p-1 shadow-sm dark:bg-blue-500/10">
+                    <img
+                        src="{{ asset('images/logo-jurnal-pkl.png') }}"
+                        alt="Jurnal PKL Online"
+                        class="h-full w-full object-contain"
+                    >
+                </div>
                 <span class="text-base font-semibold tracking-tight text-slate-900 dark:text-white">
-                    Jurnal PKL Online
+                    Jurnal <span class="text-blue-600">PKL</span> Online
                 </span>
             </a>
 
@@ -121,13 +123,47 @@
                 @endif
 
                 {{-- Form Register --}}
-                <form method="POST" action="{{ route('register.store') }}" class="space-y-4">
+                @php
+                    $classesData = ($classes ?? collect())->map(function ($c) {
+                        return [
+                            'id' => $c->id,
+                            'name' => $c->name,
+                            'grade' => $c->grade,
+                            'major_id' => $c->school_major_id,
+                        ];
+                    })->values();
+                @endphp
+                <script>
+                    function registerForm() {
+                        return {
+                            showPassword: false,
+                            showConfirmPassword: false,
+                            selectedMajorId: '{{ old('jurusan', '') }}',
+                            selectedClass: '{{ old('kelas', '') }}',
+                            allClasses: @json($classesData),
+                            get filteredClasses() {
+                                if (!this.selectedMajorId) return this.allClasses;
+                                return this.allClasses.filter(c => String(c.major_id) === String(this.selectedMajorId));
+                            },
+                            onMajorChange() {
+                                const match = this.allClasses.find(c => c.name === this.selectedClass && (!this.selectedMajorId || String(c.major_id) === String(this.selectedMajorId)));
+                                if (!match) this.selectedClass = '';
+                            }
+                        };
+                    }
+                </script>
+                <form
+                    method="POST"
+                    action="{{ route('register.store') }}"
+                    class="space-y-4"
+                    x-data="registerForm()"
+                >
                     @csrf
 
                     {{-- Nama Lengkap --}}
                     <div>
                         <label for="name" class="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
-                            Nama Lengkap Siswa
+                            Nama Lengkap Siswa <span class="text-rose-500">*</span>
                         </label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
@@ -154,7 +190,7 @@
                     {{-- Email --}}
                     <div>
                         <label for="email" class="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
-                            Alamat Email Aktif
+                            Alamat Email Aktif <span class="text-rose-500">*</span>
                         </label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
@@ -175,6 +211,76 @@
                         @error('email')
                             <p class="mt-1 text-[11px] text-rose-600 dark:text-rose-400">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    {{-- Data Sekolah: Jurusan & Kelas --}}
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {{-- Jurusan --}}
+                        <div>
+                            <label for="jurusan" class="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
+                                Jurusan <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+                                    </svg>
+                                </span>
+                                <select
+                                    id="jurusan"
+                                    name="jurusan"
+                                    required
+                                    x-model="selectedMajorId"
+                                    @change="onMajorChange()"
+                                    class="w-full rounded-xl border {{ ($errors?->has('jurusan') ?? false) ? 'border-rose-400 dark:border-rose-600' : 'border-slate-200 dark:border-slate-800' }} bg-white py-2.5 pl-9 pr-3 text-xs text-slate-900 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500"
+                                >
+                                    <option value="">-- Pilih Jurusan --</option>
+                                    @foreach ($majors ?? [] as $major)
+                                        <option value="{{ $major->id }}" @selected(old('jurusan') == $major->id)>
+                                            {{ $major->name }}{{ $major->code ? " ({$major->code})" : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @error('jurusan')
+                                <p class="mt-1 text-[11px] text-rose-600 dark:text-rose-400">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Kelas --}}
+                        <div>
+                            <label for="kelas" class="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
+                                Kelas <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                                    </svg>
+                                </span>
+                                <select
+                                    id="kelas"
+                                    name="kelas"
+                                    x-model="selectedClass"
+                                    required
+                                    class="w-full rounded-xl border {{ ($errors?->has('kelas') ?? false) ? 'border-rose-400 dark:border-rose-600' : 'border-slate-200 dark:border-slate-800' }} bg-white py-2.5 pl-9 pr-3 text-xs text-slate-900 transition focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500"
+                                >
+                                    <option value="">-- Pilih Kelas --</option>
+                                    @foreach ($classes ?? [] as $cls)
+                                        <option
+                                            value="{{ $cls->name }}"
+                                            x-show="!selectedMajorId || String(selectedMajorId) === '{{ $cls->school_major_id }}'"
+                                            @selected(old('kelas') == $cls->name)
+                                        >
+                                            {{ $cls->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            @error('kelas')
+                                <p class="mt-1 text-[11px] text-rose-600 dark:text-rose-400">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     {{-- Password --}}

@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
     'nip',
     'jurusan',
     'kelas',
+    'school_class_id',
     'school_name',
     'bidang',
     'company_name',
@@ -48,6 +49,7 @@ class User extends Authenticatable
         'nip',
         'jurusan',
         'kelas',
+        'school_class_id',
         'school_name',
         'bidang',
         'company_name',
@@ -99,7 +101,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
-    }/**
+    }
+
+    /**
+     * Kelas sekolah siswa.
+     */
+    public function schoolClass(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(SchoolClass::class, 'school_class_id');
+    }
+
+/**
  * PKL sebagai siswa.
  */
 public function studentInternships(): HasMany

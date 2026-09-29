@@ -52,6 +52,8 @@
                             <th class="px-6 py-4">Tempat PKL</th>
                             <th class="px-6 py-4">Check In</th>
                             <th class="px-6 py-4">Check Out</th>
+                            <th class="px-6 py-4">Ket. Waktu</th>
+                            <th class="px-6 py-4">Lokasi</th>
                             <th class="px-6 py-4">Status</th>
                         </tr>
                     </thead>
@@ -74,7 +76,7 @@
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     @if ($attendance->check_in)
-                                        <span class="font-medium text-emerald-600 dark:text-emerald-400">
+                                        <span class="font-semibold text-slate-800 dark:text-slate-200">
                                             {{ substr($attendance->check_in, 0, 5) }} WIB
                                         </span>
                                     @else
@@ -83,12 +85,54 @@
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     @if ($attendance->check_out)
-                                        <span class="font-medium text-blue-600 dark:text-blue-400">
+                                        <span class="font-semibold text-slate-800 dark:text-slate-200">
                                             {{ substr($attendance->check_out, 0, 5) }} WIB
                                         </span>
                                     @else
-                                        <span class="text-slate-400">Belum check-out</span>
+                                        <span class="text-xs text-amber-600 dark:text-amber-400">Belum check-out</span>
                                     @endif
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4">
+                                    @if ($attendance->late_status === 'tepat_waktu')
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                            Tepat Waktu
+                                        </span>
+                                    @elseif ($attendance->late_status === 'terlambat')
+                                        <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-400">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                            Terlambat
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-slate-400">-</span>
+                                    @endif
+                                </td>
+                                <td class="whitespace-nowrap px-6 py-4 text-xs">
+                                    <div class="flex flex-col gap-1">
+                                        @if ($attendance->check_in_lat && $attendance->check_in_lng)
+                                            <a
+                                                href="https://www.google.com/maps?q={{ $attendance->check_in_lat }},{{ $attendance->check_in_lng }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="inline-flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400"
+                                            >
+                                                📍 Masuk (Maps)
+                                            </a>
+                                        @endif
+                                        @if ($attendance->check_out_lat && $attendance->check_out_lng)
+                                            <a
+                                                href="https://www.google.com/maps?q={{ $attendance->check_out_lat }},{{ $attendance->check_out_lng }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="inline-flex items-center gap-1 text-violet-600 hover:underline dark:text-violet-400"
+                                            >
+                                                📍 Pulang (Maps)
+                                            </a>
+                                        @endif
+                                        @if (!$attendance->check_in_lat && !$attendance->check_out_lat)
+                                            <span class="text-slate-400">-</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="whitespace-nowrap px-6 py-4">
                                     <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">

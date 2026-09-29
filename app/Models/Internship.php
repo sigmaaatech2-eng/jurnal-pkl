@@ -20,6 +20,7 @@ class Internship extends Model
         'company_address',
         'start_date',
         'end_date',
+        'max_check_in_time',
         'status',
     ];
 

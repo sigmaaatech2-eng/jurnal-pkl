@@ -293,6 +293,41 @@
 
                     </div>
 
+                    {{-- LINK TUGAS / PROYEK --}}
+                    @if ($journal->link)
+                        <div class="mt-6 border-t border-slate-100 pt-6 dark:border-slate-800">
+                            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">
+                                Link Proyek / Tugas
+                            </p>
+                            <div class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-500/20 dark:bg-blue-500/10">
+                                <div class="flex items-center gap-3 overflow-hidden">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                                        </svg>
+                                    </div>
+                                    <div class="truncate">
+                                        <p class="truncate text-sm font-semibold text-slate-800 dark:text-white">
+                                            {{ $journal->link }}
+                                        </p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                                            Tautan eksternal yang dilampirkan oleh siswa.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href="{{ $journal->link }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                                >
+                                    <span>Buka Link</span>
+                                    <span>↗</span>
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+
                 </div>
 
 
@@ -337,6 +372,8 @@
                                 $extension,
                                 ['jpg', 'jpeg', 'png']
                             );
+
+                            $isZip = $extension === 'zip';
 
                         @endphp
 
@@ -388,6 +425,7 @@
                             <a
                                 href="{{ asset('storage/' . $journal->attachment) }}"
                                 target="_blank"
+                                download
                                 class="flex items-center gap-4 rounded-xl
                                 border border-slate-200 p-4 transition
                                 hover:bg-slate-50
@@ -395,55 +433,71 @@
                                 dark:hover:bg-slate-800"
                             >
 
-                                <div
-                                    class="flex h-11 w-11 shrink-0
-                                    items-center justify-center
-                                    rounded-xl bg-blue-50 text-blue-600
-                                    dark:bg-blue-500/10
-                                    dark:text-blue-400"
-                                >
-
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-5 w-5"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        stroke-width="1.8"
+                                @if ($isZip)
+                                    <div
+                                        class="flex h-12 w-12 shrink-0
+                                        items-center justify-center
+                                        rounded-xl bg-amber-100 font-extrabold text-amber-700
+                                        dark:bg-amber-500/20
+                                        dark:text-amber-400"
                                     >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M19.5 14.25v2.625a3.375 3.375 0 01-3.375 3.375h-8.25A3.375 3.375 0 014.5 16.875V14.25"
-                                        />
+                                        ZIP
+                                    </div>
+                                @else
+                                    <div
+                                        class="flex h-11 w-11 shrink-0
+                                        items-center justify-center
+                                        rounded-xl bg-blue-50 text-blue-600
+                                        dark:bg-blue-500/10
+                                        dark:text-blue-400"
+                                    >
 
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M16.5 8.25L12 3.75 7.5 8.25M12 3.75v12"
-                                        />
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-5 w-5"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            stroke-width="1.8"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M19.5 14.25v2.625a3.375 3.375 0 01-3.375 3.375h-8.25A3.375 3.375 0 014.5 16.875V14.25"
+                                            />
 
-                                    </svg>
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M16.5 8.25L12 3.75 7.5 8.25M12 3.75v12"
+                                            />
 
-                                </div>
+                                        </svg>
+
+                                    </div>
+                                @endif
 
 
-                                <div>
+                                <div class="flex-1 truncate">
 
                                     <p
                                         class="text-sm font-semibold
                                         text-slate-700 dark:text-slate-200"
                                     >
-                                        Lihat Lampiran
+                                        Download Lampiran ({{ strtoupper($extension) }})
                                     </p>
 
                                     <p
                                         class="mt-1 text-xs text-slate-400"
                                     >
-                                        Klik untuk membuka file.
+                                        Klik untuk mengunduh atau membuka file lampiran.
                                     </p>
 
                                 </div>
+
+                                <span class="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                                    Unduh ↗
+                                </span>
 
                             </a>
 

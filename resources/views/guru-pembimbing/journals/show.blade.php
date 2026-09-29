@@ -83,36 +83,113 @@
                     <div class="prose prose-slate max-w-none text-sm leading-relaxed text-slate-700 dark:prose-invert dark:text-slate-300">
                         {!! nl2br(e($journal->description)) !!}
                     </div>
+
+                    {{-- Link Proyek / Tugas --}}
+                    @if ($journal->link)
+                        <div class="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
+                            <h3 class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                Link Proyek / Tugas Siswa
+                            </h3>
+                            <div class="flex items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-500/20 dark:bg-blue-500/10">
+                                <div class="flex items-center gap-3 overflow-hidden">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                                        </svg>
+                                    </div>
+                                    <div class="truncate">
+                                        <p class="truncate text-sm font-semibold text-slate-800 dark:text-white">
+                                            {{ $journal->link }}
+                                        </p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                                            Tautan eksternal yang dilampirkan oleh siswa.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a
+                                    href="{{ $journal->link }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                                >
+                                    <span>Buka Tautan</span>
+                                    <span>↗</span>
+                                </a>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
-                {{-- Dokumentasi / Foto Lampiran --}}
+                {{-- Dokumentasi / Lampiran File --}}
                 <div class="border-t border-slate-100 p-6 dark:border-slate-800">
                     <h3 class="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Dokumentasi Kegiatan Siswa
+                        Dokumentasi & Lampiran File Siswa
                     </h3>
 
                     @if ($journal->attachment)
-                        <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40">
+                        @php
+                            $extension = strtolower(pathinfo($journal->attachment, PATHINFO_EXTENSION));
+                            $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'webp']);
+                            $isZip = $extension === 'zip';
+                        @endphp
+
+                        @if ($isImage)
+                            <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40">
+                                <a
+                                    href="{{ asset('storage/' . $journal->attachment) }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="group relative block"
+                                >
+                                    <img
+                                        src="{{ asset('storage/' . $journal->attachment) }}"
+                                        alt="Dokumentasi Jurnal {{ $journal->title }}"
+                                        class="max-h-96 w-full object-contain transition group-hover:opacity-95"
+                                        onerror="this.parentElement.innerHTML='<div class=\'p-8 text-center text-sm text-slate-400\'>Lampiran foto tidak dapat dimuat atau path belum tersedia.</div>'"
+                                    >
+                                    <div class="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition group-hover:bg-blue-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                        <span>Buka Foto Penuh</span>
+                                    </div>
+                                </a>
+                            </div>
+                        @else
                             <a
                                 href="{{ asset('storage/' . $journal->attachment) }}"
                                 target="_blank"
-                                rel="noopener noreferrer"
-                                class="group relative block"
+                                download
+                                class="flex items-center gap-4 rounded-xl border border-slate-200 p-4 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800"
                             >
-                                <img
-                                    src="{{ asset('storage/' . $journal->attachment) }}"
-                                    alt="Dokumentasi Jurnal {{ $journal->title }}"
-                                    class="max-h-96 w-full object-contain transition group-hover:opacity-95"
-                                    onerror="this.parentElement.innerHTML='<div class=\'p-8 text-center text-sm text-slate-400\'>Lampiran foto tidak dapat dimuat atau path belum tersedia.</div>'"
-                                >
-                                <div class="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-white backdrop-blur transition group-hover:bg-blue-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                    </svg>
-                                    <span>Buka Foto Penuh</span>
+                                @if ($isZip)
+                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 font-extrabold text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
+                                        ZIP
+                                    </div>
+                                @else
+                                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v2.625a3.375 3.375 0 01-3.375 3.375h-8.25A3.375 3.375 0 014.5 16.875V14.25" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 8.25L12 3.75 7.5 8.25M12 3.75v12" />
+                                        </svg>
+                                    </div>
+                                @endif
+
+                                <div class="flex-1 truncate">
+                                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                        Unduh Lampiran File ({{ strtoupper($extension) }})
+                                    </p>
+                                    <p class="mt-0.5 text-xs text-slate-400">
+                                        Klik untuk mengunduh arsip file pendukung jurnal ini.
+                                    </p>
                                 </div>
+
+                                <span class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                                    <span>Download</span>
+                                    <span>↗</span>
+                                </span>
                             </a>
-                        </div>
+                        @endif
                     @else
                         <div class="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 p-6 text-sm text-slate-400 dark:border-slate-800">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -145,9 +145,9 @@
                                         <span class="text-slate-400">NISN:</span> {{ $user->nisn }}
                                     </span>
                                 @endif
-                                @if ($user->kelas)
-                                    <span class="rounded-md bg-slate-100 px-2 py-0.5 font-medium dark:bg-slate-800">
-                                        {{ $user->kelas }}
+                                @if ($user->schoolClass?->name ?? $user->kelas)
+                                    <span class="rounded-md bg-blue-50 px-2 py-0.5 font-medium text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                                        {{ $user->schoolClass?->name ?? $user->kelas }}
                                     </span>
                                 @endif
                                 @if ($user->jurusan)
@@ -342,32 +342,108 @@
                                     >
                                 </div>
 
-                                <div>
-                                    <label for="kelas" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                                        Kelas
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="kelas"
-                                        name="kelas"
-                                        placeholder="Contoh: XII RPL 1"
-                                        value="{{ old('kelas', $user->kelas) }}"
-                                        class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:focus:border-blue-500 dark:focus:bg-slate-800"
-                                    >
-                                </div>
+                                @php
+                                    $currentMajorId = '';
+                                    if (!empty($majors) && $user->jurusan) {
+                                        $foundMajor = $majors->first(fn($m) => $m->name === $user->jurusan || $m->id == $user->jurusan);
+                                        if ($foundMajor) $currentMajorId = $foundMajor->id;
+                                    }
+                                    $classesData = ($classes ?? collect())->map(function ($c) {
+                                        return [
+                                            'id' => $c->id,
+                                            'name' => $c->name,
+                                            'grade' => $c->grade,
+                                            'major_id' => $c->school_major_id,
+                                        ];
+                                    })->values();
+                                @endphp
 
-                                <div>
-                                    <label for="jurusan" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                                        Jurusan / Konsentrasi Keahlian
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="jurusan"
-                                        name="jurusan"
-                                        placeholder="Contoh: Rekayasa Perangkat Lunak"
-                                        value="{{ old('jurusan', $user->jurusan) }}"
-                                        class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:focus:border-blue-500 dark:focus:bg-slate-800"
-                                    >
+                                <script>
+                                    function profileAcademicForm() {
+                                        return {
+                                            selectedMajorId: '{{ old('jurusan', $currentMajorId) }}',
+                                            selectedClass: '{{ old('kelas', $user->kelas ?? '') }}',
+                                            allClasses: @json($classesData),
+                                            get filteredClasses() {
+                                                if (!this.selectedMajorId) return this.allClasses;
+                                                return this.allClasses.filter(c => String(c.major_id) === String(this.selectedMajorId));
+                                            },
+                                            onMajorChange() {
+                                                const match = this.allClasses.find(c => c.name === this.selectedClass && (!this.selectedMajorId || String(c.major_id) === String(this.selectedMajorId)));
+                                                if (!match) this.selectedClass = '';
+                                            }
+                                        };
+                                    }
+                                </script>
+
+                                <div
+                                    class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4"
+                                    x-data="profileAcademicForm()"
+                                >
+                                    <div>
+                                        <label for="jurusan" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                                            Jurusan / Konsentrasi Keahlian
+                                        </label>
+                                        @if (!empty($majors) && $majors->isNotEmpty())
+                                            <select
+                                                id="jurusan"
+                                                name="jurusan"
+                                                x-model="selectedMajorId"
+                                                @change="onMajorChange()"
+                                                class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:focus:border-blue-500 dark:focus:bg-slate-800"
+                                            >
+                                                <option value="">-- Pilih Jurusan --</option>
+                                                @foreach ($majors as $major)
+                                                    <option value="{{ $major->id }}" @selected(old('jurusan', $currentMajorId) == $major->id)>
+                                                        {{ $major->name }}{{ $major->code ? " ({$major->code})" : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <input
+                                                type="text"
+                                                id="jurusan"
+                                                name="jurusan"
+                                                placeholder="Contoh: Rekayasa Perangkat Lunak"
+                                                value="{{ old('jurusan', $user->jurusan) }}"
+                                                class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:focus:border-blue-500 dark:focus:bg-slate-800"
+                                            >
+                                        @endif
+                                    </div>
+
+                                    <div>
+                                        <label for="kelas" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                                            Kelas
+                                        </label>
+                                        @if (!empty($classes) && $classes->isNotEmpty())
+                                            <select
+                                                id="kelas"
+                                                name="kelas"
+                                                x-model="selectedClass"
+                                                class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:focus:border-blue-500 dark:focus:bg-slate-800"
+                                            >
+                                                <option value="">-- Pilih Kelas --</option>
+                                                @foreach ($classes as $cls)
+                                                    <option
+                                                        value="{{ $cls->name }}"
+                                                        x-show="!selectedMajorId || String(selectedMajorId) === '{{ $cls->school_major_id }}'"
+                                                        @selected(old('kelas', $user->schoolClass?->name ?? $user->kelas) == $cls->name)
+                                                    >
+                                                        {{ $cls->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <input
+                                                type="text"
+                                                id="kelas"
+                                                name="kelas"
+                                                placeholder="Contoh: XII RPL 1"
+                                                value="{{ old('kelas', $user->kelas) }}"
+                                                class="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:focus:border-blue-500 dark:focus:bg-slate-800"
+                                            >
+                                        @endif
+                                    </div>
                                 </div>
 
                             @elseif ($role === 'guru_pembimbing')

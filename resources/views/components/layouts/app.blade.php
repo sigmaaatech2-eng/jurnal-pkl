@@ -14,7 +14,7 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     >
 
     <title>
@@ -502,7 +502,43 @@
                     Manajemen User
                 </a>
 
+                <a
+                    href="{{ route('admin-sekolah.school-data.majors.index') }}"
+                    class="mb-2 flex items-center justify-between rounded-xl px-4 py-3
+                    text-sm font-medium transition
+                    {{ request()->routeIs('admin-sekolah.school-data.majors.*')
+                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10'
+                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                    }}"
+                >
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342" />
+                        </svg>
+                        <span>Data Jurusan</span>
+                    </div>
+                </a>
+
+                <a
+                    href="{{ route('admin-sekolah.school-data.classes.index') }}"
+                    class="mb-2 flex items-center justify-between rounded-xl px-4 py-3
+                    text-sm font-medium transition
+                    {{ request()->routeIs('admin-sekolah.school-data.classes.*')
+                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10'
+                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+                    }}"
+                >
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                        </svg>
+                        <span>Data & Form Kelas</span>
+                    </div>
+                    <span class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Form</span>
+                </a>
+
             @endrole
+
 
             {{-- KEPALA SEKOLAH --}}
             @role('kepala_sekolah')
@@ -816,12 +852,14 @@
                 </button>
 
                 {{-- MOBILE BRAND TITLE --}}
-                <div class="flex items-center gap-2 lg:hidden">
-                    <img
-                        src="{{ asset('images/logo-jurnal-pkl.png') }}"
-                        alt="Jurnal PKL"
-                        class="h-7 w-7 object-contain"
-                    >
+                <div class="flex items-center gap-2.5 lg:hidden">
+                    <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-blue-50 p-0.5 shadow-sm dark:bg-blue-500/10">
+                        <img
+                            src="{{ asset('images/logo-jurnal-pkl.png') }}"
+                            alt="Jurnal PKL"
+                            class="h-full w-full object-contain"
+                        >
+                    </div>
                     <span class="text-xs font-bold tracking-wider text-slate-800 dark:text-white uppercase">
                         Jurnal <span class="text-blue-600">PKL</span>
                     </span>
@@ -1153,7 +1191,7 @@
 
 
         {{-- CONTENT --}}
-        <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-10">
+        <main class="flex-1 p-3 sm:p-5 md:p-6 lg:p-8 safe-main-content">
 
             {{ $slot }}
 
@@ -1164,7 +1202,8 @@
 </div>
 
 {{-- BOTTOM NAVIGATION BAR FOR MOBILE (PHONES & TABLETS IN PORTRAIT) --}}
-<nav class="fixed bottom-0 inset-x-0 z-40 flex h-16 items-center justify-around border-t border-slate-200/80 bg-white/95 px-2 backdrop-blur-lg dark:border-slate-800/80 dark:bg-slate-900/95 lg:hidden">
+<nav class="fixed bottom-0 inset-x-0 z-40 border-t border-slate-200/80 bg-white/95 px-2 backdrop-blur-lg dark:border-slate-800/80 dark:bg-slate-900/95 lg:hidden safe-bottom-nav">
+    <div class="mx-auto flex h-full w-full max-w-md items-center justify-around sm:max-w-xl">
     @role('siswa')
         <a
             href="{{ route('siswa.dashboard') }}"
@@ -1310,6 +1349,16 @@
         </a>
 
         <a
+            href="{{ route('admin-sekolah.school-data.majors.index') }}"
+            class="flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition {{ request()->routeIs('admin-sekolah.school-data.*') ? 'text-purple-600 dark:text-purple-400 font-semibold' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500' }}"
+        >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h7"/>
+            </svg>
+            <span class="text-[10px]">Data</span>
+        </a>
+
+        <a
             href="{{ route('profile.edit') }}"
             class="flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition {{ request()->routeIs('profile.*') ? 'text-purple-600 dark:text-purple-400 font-semibold' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500' }}"
         >
@@ -1408,6 +1457,7 @@
             <span class="text-[10px]">Profil</span>
         </a>
     @endrole
+    </div>
 </nav>
 
 @stack('scripts')

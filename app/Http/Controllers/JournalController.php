@@ -59,12 +59,16 @@ class JournalController extends Controller
             'date' => ['required', 'date'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
+            'link' => ['nullable', 'url', 'max:2000'],
             'attachment' => [
                 'nullable',
                 'file',
-                'mimes:pdf,doc,docx,jpg,jpeg,png',
-                'max:5120',
+                'mimes:pdf,doc,docx,jpg,jpeg,png,zip',
+                'max:20480',
             ],
+        ], [
+            'link.url' => 'Format link/URL tidak valid. Gunakan format lengkap seperti https://...',
+            'attachment.mimes' => 'Format file lampiran yang diperbolehkan: PDF, DOC, DOCX, JPG, JPEG, PNG, ZIP.',
         ]);
 
         $attachmentPath = null;
@@ -81,6 +85,7 @@ class JournalController extends Controller
             'date'          => $validated['date'],
             'title'         => $validated['title'],
             'description'   => $validated['description'],
+            'link'          => $validated['link'] ?? null,
             'attachment'    => $attachmentPath,
             'status'        => 'pending',
         ]);
@@ -159,12 +164,16 @@ public function update(Request $request, Journal $journal)
         'date' => ['required', 'date'],
         'title' => ['required', 'string', 'max:255'],
         'description' => ['required', 'string'],
+        'link' => ['nullable', 'url', 'max:2000'],
         'attachment' => [
             'nullable',
             'file',
-            'mimes:pdf,doc,docx,jpg,jpeg,png',
-            'max:5120',
+            'mimes:pdf,doc,docx,jpg,jpeg,png,zip',
+            'max:20480',
         ],
+    ], [
+        'link.url' => 'Format link/URL tidak valid. Gunakan format lengkap seperti https://...',
+        'attachment.mimes' => 'Format file lampiran yang diperbolehkan: PDF, DOC, DOCX, JPG, JPEG, PNG, ZIP.',
     ]);
 
     // Cek apakah jurnal sebelumnya ditolak (akan diresubmit ke pending)
@@ -175,6 +184,7 @@ public function update(Request $request, Journal $journal)
         'date'        => $validated['date'],
         'title'       => $validated['title'],
         'description' => $validated['description'],
+        'link'        => $validated['link'] ?? null,
     ];
 
     if ($wasRejected) {

@@ -17,6 +17,7 @@ class Journal extends Model
         'title',
         'description',
         'attachment',
+        'link',
         'status',
         'feedback',
         'mentor_score',

@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Internship;
 use App\Models\Journal;
 use App\Models\User;
+use App\Models\SchoolMajor;
 use Illuminate\Http\Request;
 
 class HeadmasterController extends Controller
@@ -136,10 +137,13 @@ class HeadmasterController extends Controller
         $internships = $query->latest()->paginate(15)->withQueryString();
 
         // List jurusan yang ada untuk filter
-        $jurusanList = User::role('siswa')
-            ->whereNotNull('jurusan')
-            ->distinct()
-            ->pluck('jurusan');
+        $jurusanList = SchoolMajor::active()->orderBy('name')->pluck('name');
+        if ($jurusanList->isEmpty()) {
+            $jurusanList = User::role('siswa')
+                ->whereNotNull('jurusan')
+                ->distinct()
+                ->pluck('jurusan');
+        }
 
         return view('kepala-sekolah.students.index', compact('internships', 'jurusanList'));
     }

@@ -284,6 +284,45 @@
 
                     </div>
 
+                    {{-- LINK (OPSIONAL) --}}
+                    <div class="mt-6">
+
+                        <label
+                            for="link"
+                            class="mb-2 block text-sm font-semibold
+                            text-slate-700 dark:text-slate-300"
+                        >
+                            Link Tugas / Proyek / Referensi (Opsional)
+                        </label>
+
+                        <div class="relative">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                                </svg>
+                            </div>
+                            <input
+                                type="url"
+                                id="link"
+                                name="link"
+                                value="{{ old('link', $journal->link) }}"
+                                placeholder="https://github.com/... atau https://drive.google.com/..."
+                                class="w-full rounded-xl border border-slate-200
+                                bg-white py-3 pl-11 pr-4 text-sm text-slate-800
+                                placeholder:text-slate-400
+                                outline-none transition
+                                focus:border-blue-500 focus:ring-4
+                                focus:ring-blue-500/10
+                                dark:border-slate-700 dark:bg-slate-800
+                                dark:text-white dark:placeholder:text-slate-500"
+                            >
+                        </div>
+                        <p class="mt-1.5 text-xs text-slate-400">
+                            Tautan GitHub, Google Drive, Figma, Notion, atau demo website.
+                        </p>
+
+                    </div>
+
                 </div>
 
 
@@ -319,6 +358,8 @@
                                     $extension,
                                     ['jpg', 'jpeg', 'png']
                                 );
+
+                                $isCurrentZip = $extension === 'zip';
                             @endphp
 
 
@@ -357,28 +398,37 @@
                                     dark:hover:bg-slate-800"
                                 >
 
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-5 w-5"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        stroke-width="1.8"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M19.5 14.25v2.625a3.375 3.375 0 01-3.375 3.375h-8.25A3.375 3.375 0 014.5 16.875V14.25"
-                                        />
+                                    @if ($isCurrentZip)
+                                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                                            <span class="text-xs font-bold uppercase">ZIP</span>
+                                        </div>
+                                    @else
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-5 w-5"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            stroke-width="1.8"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M19.5 14.25v2.625a3.375 3.375 0 01-3.375 3.375h-8.25A3.375 3.375 0 014.5 16.875V14.25"
+                                            />
 
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M16.5 8.25L12 3.75 7.5 8.25M12 3.75v12"
-                                        />
-                                    </svg>
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                d="M16.5 8.25L12 3.75 7.5 8.25M12 3.75v12"
+                                            />
+                                        </svg>
+                                    @endif
 
-                                    Lihat Lampiran
+                                    <div class="truncate">
+                                        <span class="block truncate">Lihat / Download File</span>
+                                        <span class="text-xs text-slate-400 uppercase">{{ $extension }}</span>
+                                    </div>
 
                                 </a>
 
@@ -468,7 +518,7 @@
                             <span
                                 class="mt-1 text-xs text-slate-400"
                             >
-                                PDF, DOC, DOCX, JPG, JPEG, PNG
+                                PDF, DOC, DOCX, JPG, JPEG, PNG, ZIP
                             </span>
 
 
@@ -476,7 +526,7 @@
                                 type="file"
                                 id="attachment"
                                 name="attachment"
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip"
                                 class="hidden"
                                 @change="handleFile($event)"
                             >
@@ -512,7 +562,7 @@
                             class="mt-4 text-xs text-slate-400
                             dark:text-slate-500"
                         >
-                            Ukuran maksimal file 5 MB.
+                            Ukuran maksimal file 20 MB.
                         </p>
 
                     </div>

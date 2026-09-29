@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <title>Jurnal PKL Online - Platform Dokumentasi & Pemantauan PKL</title>
 
@@ -47,13 +47,15 @@
         <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
             {{-- Logo / Nama --}}
             <a href="#beranda" class="flex items-center gap-2.5 transition hover:opacity-90">
-                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
-                </span>
+                <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-blue-50 p-1 shadow-sm dark:bg-blue-500/10">
+                    <img
+                        src="{{ asset('images/logo-jurnal-pkl.png') }}"
+                        alt="Jurnal PKL Online"
+                        class="h-full w-full object-contain"
+                    >
+                </div>
                 <span class="text-base font-semibold tracking-tight text-slate-900 dark:text-white sm:text-lg">
-                    Jurnal PKL Online
+                    Jurnal <span class="text-blue-600">PKL</span> Online
                 </span>
             </a>
 
@@ -468,13 +470,15 @@
                 {{-- Brand & About --}}
                 <div class="space-y-4">
                     <div class="flex items-center gap-2.5">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
-                            <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                            </svg>
-                        </span>
+                        <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-blue-50 p-1 shadow-sm dark:bg-blue-500/10">
+                            <img
+                                src="{{ asset('images/logo-jurnal-pkl.png') }}"
+                                alt="Jurnal PKL Online"
+                                class="h-full w-full object-contain"
+                            >
+                        </div>
                         <span class="text-base font-semibold tracking-tight text-slate-900 dark:text-white">
-                            Jurnal PKL Online
+                            Jurnal <span class="text-blue-600">PKL</span> Online
                         </span>
                     </div>
                     <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
@@ -525,16 +529,16 @@
                             <svg class="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                             </svg>
-                            <a href="mailto:kontak@jurnalpkl.id" class="transition hover:text-blue-600 hover:underline dark:hover:text-blue-400">
-                                kontak@jurnalpkl.id
+                            <a href="mailto:sigmaaatech2@gmail.com" class="transition hover:text-blue-600 hover:underline dark:hover:text-blue-400">
+                                sigmaaatech2@gmail.com
                             </a>
                         </li>
                         <li class="flex items-start gap-2">
                             <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                             </svg>
-                            <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" class="transition hover:text-emerald-600 hover:underline dark:hover:text-emerald-400">
-                                +62 812-3456-7890
+                            <a href="https://wa.me/6283180146264" target="_blank" rel="noopener noreferrer" class="transition hover:text-emerald-600 hover:underline dark:hover:text-emerald-400">
+                                +62 83180146264
                             </a>
                         </li>
                         <li class="flex items-start gap-2">
@@ -558,7 +562,7 @@
                     <div class="flex items-center gap-2 pt-1">
                         {{-- Instagram --}}
                         <a
-                            href="https://instagram.com"
+                            href="https://www.instagram.com/sigma_techid"
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="Instagram Tim"
@@ -571,7 +575,7 @@
 
                         {{-- GitHub --}}
                         <a
-                            href="https://github.com"
+                            href="https://github.com/sigmaaatech2-eng"
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="GitHub Tim"
@@ -582,22 +586,22 @@
                             </svg>
                         </a>
 
-                        {{-- LinkedIn --}}
+                        {{--TikTok --}}
                         <a
-                            href="https://linkedin.com"
+                            href="https://www.tiktok.com/@sigmatech.id"
                             target="_blank"
                             rel="noopener noreferrer"
-                            aria-label="LinkedIn Tim"
-                            class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-800 dark:text-slate-300 dark:hover:border-blue-500/50 dark:hover:bg-blue-950/40 dark:hover:text-blue-400"
+                            aria-label="TikTok Tim"
+                            class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-black hover:bg-black hover:text-white dark:border-slate-800 dark:text-slate-300 dark:hover:border-black dark:hover:bg-black dark:hover:text-white"
                         >
-                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path fill-rule="evenodd" clip-rule="evenodd" d="M9 0h1.98c.144.715.54 1.617 1.235 2.512C12.895 3.389 13.797 4 15 4v2c-1.753 0-3.07-.814-4-1.829V11a5 5 0 1 1-5-5v2a3 3 0 1 0 3 3z"/>
                             </svg>
                         </a>
 
                         {{-- WhatsApp Langsung --}}
                         <a
-                            href="https://wa.me/6281234567890"
+                            href="https://wa.me/6283180146264"
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label="Chat WhatsApp Tim"
@@ -617,7 +621,7 @@
                     &copy; {{ date('Y') }} Jurnal PKL Online. Seluruh hak cipta dilindungi.
                 </p>
                 <p>
-                    Dikembangkan oleh Tim Jurnal PKL Digital.
+                    Dikembangkan oleh Tim Sigma Tech ID.
                 </p>
             </div>
         </div>

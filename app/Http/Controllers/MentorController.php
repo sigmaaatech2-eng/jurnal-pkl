@@ -78,7 +78,8 @@ class MentorController extends Controller
         $mentor = Auth::user();
 
         $query = Internship::with(['student', 'journals', 'attendances'])
-            ->where('mentor_id', $mentor->id);
+            ->where('mentor_id', $mentor->id)
+            ->where('status', '!=', 'completed');
 
         // Filter status
         if ($request->filled('status') && $request->status !== 'all') {
@@ -234,5 +235,43 @@ class MentorController extends Controller
         return redirect()
             ->route('mentor.journals.show', $journal)
             ->with('success', 'Permintaan revisi telah dikirim ke siswa.');
+    }
+
+    /**
+     * Memperbarui batas waktu absen maksimal siswa oleh mentor.
+     */
+    public function updateAttendanceDeadline(Request $request)
+    {
+        /** @var User $mentor */
+        $mentor = Auth::user();
+
+        $validated = $request->validate([
+            'max_check_in_time' => ['required', 'string'],
+            'internship_id'     => ['nullable', 'exists:internships,id'],
+        ], [
+            'max_check_in_time.required' => 'Batas jam masuk wajib diisi.',
+        ]);
+
+        // Normalize time (ensure H:i:s)
+        $time = date('H:i:s', strtotime($validated['max_check_in_time']));
+
+        if (!empty($validated['internship_id'])) {
+            $internship = Internship::where('id', $validated['internship_id'])
+                ->where('mentor_id', $mentor->id)
+                ->firstOrFail();
+
+            $internship->update([
+                'max_check_in_time' => $time,
+            ]);
+
+            return back()->with('success', 'Batas waktu absen untuk siswa ' . ($internship->student->name ?? '') . ' berhasil diatur menjadi ' . substr($time, 0, 5) . ' WIB.');
+        }
+
+        // Terapkan ke semua siswa bimbingan aktif mentor ini
+        Internship::where('mentor_id', $mentor->id)->update([
+            'max_check_in_time' => $time,
+        ]);
+
+        return back()->with('success', 'Batas waktu absen untuk seluruh siswa bimbingan berhasil diatur menjadi ' . substr($time, 0, 5) . ' WIB.');
     }
 }

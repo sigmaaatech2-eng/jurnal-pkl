@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <title>Masuk - Jurnal PKL Online</title>
 
@@ -47,13 +47,15 @@
     <header class="w-full px-4 py-4 sm:px-8">
         <div class="mx-auto flex max-w-6xl items-center justify-between">
             <a href="{{ url('/') }}" class="flex items-center gap-2.5 transition hover:opacity-90">
-                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
-                    <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
-                </span>
+                <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-blue-50 p-1 shadow-sm dark:bg-blue-500/10">
+                    <img
+                        src="{{ asset('images/logo-jurnal-pkl.png') }}"
+                        alt="Jurnal PKL Online"
+                        class="h-full w-full object-contain"
+                    >
+                </div>
                 <span class="text-base font-semibold tracking-tight text-slate-900 dark:text-white">
-                    Jurnal PKL Online
+                    Jurnal <span class="text-blue-600">PKL</span> Online
                 </span>
             </a>
 

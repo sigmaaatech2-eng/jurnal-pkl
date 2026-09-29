@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\SchoolMajor;
+use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -60,7 +62,9 @@ class UserManagementController extends Controller
      */
     public function create()
     {
-        return view('admin-sekolah.users.create');
+        $majors  = SchoolMajor::active()->orderBy('name')->get();
+        $classes = SchoolClass::active()->with('major')->orderBy('name')->get();
+        return view('admin-sekolah.users.create', compact('majors', 'classes'));
     }
 
 
@@ -87,6 +91,8 @@ class UserManagementController extends Controller
                 'min:8',
                 'confirmed',
             ],
+            'kelas'   => ['nullable', 'string', 'max:100'],
+            'jurusan' => ['nullable'],  // bisa berupa ID (dari dropdown) atau string teks bebas
         ], [
             'name.required'     => 'Nama lengkap pengguna wajib diisi.',
             'email.required'    => 'Alamat email wajib diisi.',
@@ -99,10 +105,19 @@ class UserManagementController extends Controller
             'password.confirmed'=> 'Konfirmasi kata sandi tidak cocok.',
         ]);
 
+        // Jika jurusan dikirim sebagai ID (dari dropdown data sekolah), ambil namanya
+        $jurusanValue = null;
+        if (!empty($validated['jurusan'])) {
+            $majorModel = \App\Models\SchoolMajor::find($validated['jurusan']);
+            $jurusanValue = $majorModel ? $majorModel->name : $validated['jurusan'];
+        }
+
         $user = User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'kelas'    => $validated['kelas'] ?? null,
+            'jurusan'  => $jurusanValue,
         ]);
 
         $user->syncRoles([$validated['role']]);

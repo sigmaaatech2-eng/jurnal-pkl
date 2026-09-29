@@ -225,6 +225,27 @@
 
             <div class="p-6">
 
+                {{-- INFORMASI BATAS WAKTU ABSEN OLEH MENTOR --}}
+                <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                    <div class="flex items-center gap-2.5">
+                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="font-bold">Batas Waktu Absen Masuk:</span>
+                            <span class="font-extrabold text-amber-700 dark:text-amber-200">{{ substr($internship->max_check_in_time ?? '08:00:00', 0, 5) }} WIB</span>
+                            @if ($internship->mentor)
+                                <span class="text-amber-700/80 dark:text-amber-400">· Diatur oleh mentor: <strong>{{ $internship->mentor->name }}</strong></span>
+                            @endif
+                        </div>
+                    </div>
+                    <span class="rounded-full bg-amber-200/70 px-2.5 py-1 font-semibold text-amber-900 dark:bg-amber-500/20 dark:text-amber-300">
+                        Check-in setelah jam ini dicatat Terlambat
+                    </span>
+                </div>
+
                 {{-- STATUS --}}
                 <div class="grid gap-4 sm:grid-cols-2">
 
@@ -235,7 +256,7 @@
                         dark:border-slate-800 dark:bg-slate-950/40"
                     >
 
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-start gap-4">
 
                             <div
                                 class="flex h-11 w-11 shrink-0
@@ -269,7 +290,7 @@
                             </div>
 
 
-                            <div>
+                            <div class="flex-1">
 
                                 <p
                                     class="text-xs font-medium uppercase
@@ -278,20 +299,50 @@
                                     Check In
                                 </p>
 
-                                <p
-                                    class="mt-1 text-xl font-bold
-                                    text-slate-800 dark:text-white"
-                                >
+                                <div class="mt-1 flex flex-wrap items-baseline gap-2">
+                                    <p
+                                        class="text-xl font-bold
+                                        text-slate-800 dark:text-white"
+                                    >
+                                        @if ($todayAttendance?->check_in)
+                                            {{ \Carbon\Carbon::parse($todayAttendance->check_in)->format('H:i') }} WIB
+                                        @else
+                                            --
+                                        @endif
+                                    </p>
+
                                     @if ($todayAttendance?->check_in)
-
-                                        {{ \Carbon\Carbon::parse($todayAttendance->check_in)->format('H:i') }}
-
-                                    @else
-
-                                        --
-
+                                        @if ($todayAttendance->late_status === 'tepat_waktu')
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                                Tepat Waktu
+                                            </span>
+                                        @elseif ($todayAttendance->late_status === 'terlambat')
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-400">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                                Terlambat
+                                            </span>
+                                        @endif
                                     @endif
-                                </p>
+                                </div>
+
+                                @if ($todayAttendance?->check_in_lat && $todayAttendance?->check_in_lng)
+                                    <div class="mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                        </svg>
+                                        <a
+                                            href="https://www.google.com/maps?q={{ $todayAttendance->check_in_lat }},{{ $todayAttendance->check_in_lng }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="truncate font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                            title="Buka lokasi di Google Maps"
+                                        >
+                                            Lokasi Check In (Maps)
+                                        </a>
+                                    </div>
+                                @endif
 
                             </div>
 
@@ -307,7 +358,7 @@
                         dark:border-slate-800 dark:bg-slate-950/40"
                     >
 
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-start gap-4">
 
                             <div
                                 class="flex h-11 w-11 shrink-0
@@ -342,7 +393,7 @@
                             </div>
 
 
-                            <div>
+                            <div class="flex-1">
 
                                 <p
                                     class="text-xs font-medium uppercase
@@ -357,7 +408,7 @@
                                 >
                                     @if ($todayAttendance?->check_out)
 
-                                        {{ \Carbon\Carbon::parse($todayAttendance->check_out)->format('H:i') }}
+                                        {{ \Carbon\Carbon::parse($todayAttendance->check_out)->format('H:i') }} WIB
 
                                     @else
 
@@ -365,6 +416,24 @@
 
                                     @endif
                                 </p>
+
+                                @if ($todayAttendance?->check_out_lat && $todayAttendance?->check_out_lng)
+                                    <div class="mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                        </svg>
+                                        <a
+                                            href="https://www.google.com/maps?q={{ $todayAttendance->check_out_lat }},{{ $todayAttendance->check_out_lng }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="truncate font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                            title="Buka lokasi di Google Maps"
+                                        >
+                                            Lokasi Check Out (Maps) 
+                                        </a>
+                                    </div>
+                                @endif
 
                             </div>
 
@@ -593,6 +662,14 @@
                                 </th>
 
                                 <th class="whitespace-nowrap px-6 py-4">
+                                    Status
+                                </th>
+
+                                <th class="whitespace-nowrap px-6 py-4">
+                                    Lokasi
+                                </th>
+
+                                <th class="whitespace-nowrap px-6 py-4">
                                     Bukti
                                 </th>
 
@@ -627,13 +704,13 @@
                                     {{-- CHECK IN --}}
                                     <td
                                         class="whitespace-nowrap px-6 py-4
-                                        text-sm text-slate-600
-                                        dark:text-slate-300"
+                                        text-sm font-semibold text-slate-800
+                                        dark:text-slate-200"
                                     >
 
                                         @if ($attendance->check_in)
 
-                                            {{ \Carbon\Carbon::parse($attendance->check_in)->format('H:i') }}
+                                            {{ \Carbon\Carbon::parse($attendance->check_in)->format('H:i') }} WIB
 
                                         @else
 
@@ -653,7 +730,7 @@
 
                                         @if ($attendance->check_out)
 
-                                            {{ \Carbon\Carbon::parse($attendance->check_out)->format('H:i') }}
+                                            {{ \Carbon\Carbon::parse($attendance->check_out)->format('H:i') }} WIB
 
                                         @else
 
@@ -669,6 +746,72 @@
                                             </span>
 
                                         @endif
+
+                                    </td>
+
+
+                                    {{-- STATUS KEHADIRAN (TEPAT WAKTU / TERLAMBAT) --}}
+                                    <td class="whitespace-nowrap px-6 py-4">
+
+                                        @if ($attendance->late_status === 'tepat_waktu')
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                                Tepat Waktu
+                                            </span>
+                                        @elseif ($attendance->late_status === 'terlambat')
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-400">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                                Terlambat
+                                            </span>
+                                        @else
+                                            <span class="text-xs text-slate-400">-</span>
+                                        @endif
+
+                                    </td>
+
+
+                                    {{-- LOKASI ABSEN --}}
+                                    <td class="whitespace-nowrap px-6 py-4 text-xs">
+
+                                        <div class="flex flex-col gap-1.5">
+
+                                            @if ($attendance->check_in_lat && $attendance->check_in_lng)
+                                                <a
+                                                    href="https://www.google.com/maps?q={{ $attendance->check_in_lat }},{{ $attendance->check_in_lng }}"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                                    title="Koordinat: {{ $attendance->check_in_lat }}, {{ $attendance->check_in_lng }}"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                                    </svg>
+                                                    <span>Masuk (Maps)</span>
+                                                </a>
+                                            @endif
+
+                                            @if ($attendance->check_out_lat && $attendance->check_out_lng)
+                                                <a
+                                                    href="https://www.google.com/maps?q={{ $attendance->check_out_lat }},{{ $attendance->check_out_lng }}"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="inline-flex items-center gap-1 font-medium text-violet-600 hover:underline dark:text-violet-400"
+                                                    title="Koordinat: {{ $attendance->check_out_lat }}, {{ $attendance->check_out_lng }}"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                                    </svg>
+                                                    <span>Pulang (Maps) ↗</span>
+                                                </a>
+                                            @endif
+
+                                            @if (!$attendance->check_in_lat && !$attendance->check_out_lat)
+                                                <span class="text-slate-400">-</span>
+                                            @endif
+
+                                        </div>
 
                                     </td>
 
@@ -812,7 +955,7 @@
                     autoplay
                     playsinline
                     class="block h-auto w-full"
-                    transform: scaleX(-1);
+                    style="transform: scaleX(-1);"
                 ></video>
 
 
@@ -832,6 +975,22 @@
                 x-ref="canvas"
                 class="hidden"
             ></canvas>
+
+            <!-- Indikator Lokasi GPS -->
+            <div class="mt-3 flex items-center justify-between rounded-xl bg-slate-900/90 px-3.5 py-2.5 text-xs">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                    </svg>
+                    <span class="text-slate-300 font-medium" x-text="locationStatus || 'Mendeteksi lokasi GPS...'"></span>
+                </div>
+                <template x-if="lat && lng">
+                    <span class="rounded bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
+                        GPS Terkunci
+                    </span>
+                </template>
+            </div>
 
         </div>
 
@@ -943,6 +1102,24 @@
                 x-ref="photoInput"
             >
 
+            <input
+                type="hidden"
+                name="lat"
+                x-ref="latInput"
+            >
+
+            <input
+                type="hidden"
+                name="lng"
+                x-ref="lngInput"
+            >
+
+            <input
+                type="hidden"
+                name="address"
+                x-ref="addressInput"
+            >
+
         </form>
 
     </div>
@@ -968,6 +1145,11 @@
 
                 cameraError: '',
 
+                lat: '',
+                lng: '',
+                address: '',
+                locationStatus: '',
+
 
                 openCamera(type)
                 {
@@ -977,11 +1159,44 @@
 
                     this.cameraError = '';
 
+                    this.detectLocation();
+
                     this.$nextTick(() => {
 
                         this.startCamera();
 
                     });
+                },
+
+
+                detectLocation()
+                {
+                    this.lat = '';
+                    this.lng = '';
+                    this.address = '';
+                    this.locationStatus = 'Mendeteksi lokasi GPS...';
+
+                    if (!navigator.geolocation) {
+                        this.locationStatus = 'Browser tidak mendukung GPS';
+                        return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            this.lat = position.coords.latitude.toFixed(7);
+                            this.lng = position.coords.longitude.toFixed(7);
+                            this.locationStatus = `Lokasi terdeteksi (${this.lat}, ${this.lng})`;
+                        },
+                        (error) => {
+                            console.warn('Geolocation error:', error);
+                            this.locationStatus = 'Izin lokasi tidak diberikan (tetap dapat absen)';
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
                 },
 
 
@@ -1062,19 +1277,6 @@
                         canvas.getContext('2d');
 
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | FOTO NORMAL
-                    |--------------------------------------------------------------------------
-                    |
-                    | Tidak menggunakan:
-                    |
-                    | context.scale(-1, 1)
-                    |
-                    | sehingga hasil foto TIDAK mirror.
-                    |
-                    */
-
                     context.drawImage(
                         video,
                         0,
@@ -1111,6 +1313,10 @@
 
                             this.$refs.photoInput.files =
                                 dataTransfer.files;
+
+                            this.$refs.latInput.value = this.lat || '';
+                            this.$refs.lngInput.value = this.lng || '';
+                            this.$refs.addressInput.value = this.locationStatus || '';
 
 
                             /*

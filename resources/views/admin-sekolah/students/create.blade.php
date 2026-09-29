@@ -70,7 +70,35 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('admin-sekolah.students.store') }}" class="p-6 space-y-6">
+                @php
+                    $classesData = ($classes ?? collect())->map(function ($c) {
+                        return [
+                            'id' => $c->id,
+                            'name' => $c->name,
+                            'grade' => $c->grade,
+                            'major_id' => $c->school_major_id,
+                        ];
+                    })->values();
+                @endphp
+                <script>
+                    function studentCreateForm() {
+                        return {
+                            selectedMajorId: '{{ old('jurusan', '') }}',
+                            selectedClass: '{{ old('kelas', '') }}',
+                            allClasses: @json($classesData),
+                            get filteredClasses() {
+                                if (!this.selectedMajorId) return this.allClasses;
+                                return this.allClasses.filter(c => String(c.major_id) === String(this.selectedMajorId));
+                            }
+                        };
+                    }
+                </script>
+                <form
+                    method="POST"
+                    action="{{ route('admin-sekolah.students.store') }}"
+                    class="p-6 space-y-6"
+                    x-data="studentCreateForm()"
+                >
                     @csrf
 
                     {{-- Nama Siswa --}}
@@ -135,20 +163,35 @@
                             <label for="jurusan" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                                 Jurusan Siswa <span class="text-rose-500">*</span>
                             </label>
-                            <select
-                                name="jurusan"
-                                id="jurusan"
-                                class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                                required
-                            >
-                                <option value="">-- Pilih Jurusan --</option>
-                                <option value="Rekayasa Perangkat Lunak (RPL)" {{ old('jurusan') === 'Rekayasa Perangkat Lunak (RPL)' ? 'selected' : '' }}>Rekayasa Perangkat Lunak (RPL)</option>
-                                <option value="Teknik Komputer dan Jaringan (TKJ)" {{ old('jurusan') === 'Teknik Komputer dan Jaringan (TKJ)' ? 'selected' : '' }}>Teknik Komputer dan Jaringan (TKJ)</option>
-                                <option value="Desain Komunikasi Visual (DKV)" {{ old('jurusan') === 'Desain Komunikasi Visual (DKV)' ? 'selected' : '' }}>Desain Komunikasi Visual (DKV)</option>
-                                <option value="Akuntansi dan Keuangan Lembaga (AKL)" {{ old('jurusan') === 'Akuntansi dan Keuangan Lembaga (AKL)' ? 'selected' : '' }}>Akuntansi dan Keuangan Lembaga (AKL)</option>
-                                <option value="Otomatisasi dan Tata Kelola Perkantoran (OTKP)" {{ old('jurusan') === 'Otomatisasi dan Tata Kelola Perkantoran (OTKP)' ? 'selected' : '' }}>Otomatisasi & Tata Kelola Perkantoran (OTKP)</option>
-                                <option value="Teknik Kendaraan Ringan (TKR)" {{ old('jurusan') === 'Teknik Kendaraan Ringan (TKR)' ? 'selected' : '' }}>Teknik Kendaraan Ringan (TKR)</option>
-                            </select>
+                            @if (($majors ?? collect())->isNotEmpty())
+                                <select
+                                    name="jurusan"
+                                    id="jurusan"
+                                    x-model="selectedMajorId"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 @error('jurusan') border-rose-500 @enderror"
+                                    required
+                                >
+                                    <option value="">-- Pilih Jurusan --</option>
+                                    @foreach ($majors as $major)
+                                        <option value="{{ $major->id }}" @selected(old('jurusan') == $major->id)>
+                                            {{ $major->name }}{{ $major->code ? " ({$major->code})" : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input
+                                    type="text"
+                                    name="jurusan"
+                                    id="jurusan"
+                                    value="{{ old('jurusan') }}"
+                                    placeholder="Contoh: Rekayasa Perangkat Lunak (RPL)"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    required
+                                >
+                                <p class="mt-1 text-[11px] text-amber-500">
+                                    Belum ada data jurusan. <a href="{{ route('admin-sekolah.school-data.majors.create') }}" class="font-bold underline">Tambah jurusan</a> di Data Sekolah.
+                                </p>
+                            @endif
                             @error('jurusan')
                                 <p class="mt-1 text-xs text-rose-500 font-medium">{{ $message }}</p>
                             @enderror
@@ -157,16 +200,36 @@
                         {{-- Kelas --}}
                         <div>
                             <label for="kelas" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                                Kelas
+                                Kelas Siswa <span class="text-rose-500">*</span>
                             </label>
-                            <input
-                                type="text"
-                                name="kelas"
-                                id="kelas"
-                                value="{{ old('kelas', 'XII') }}"
-                                placeholder="Contoh: XII RPL 1"
-                                class="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3.5 text-sm text-slate-800 placeholder-slate-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500"
-                            >
+                            @if (($classes ?? collect())->isNotEmpty())
+                                <select
+                                    name="kelas"
+                                    id="kelas"
+                                    x-model="selectedClass"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 @error('kelas') border-rose-500 @enderror"
+                                    required
+                                >
+                                    <option value="">-- Pilih Kelas --</option>
+                                    <template x-for="cls in filteredClasses" :key="cls.id">
+                                        <option :value="cls.name" x-text="cls.name"></option>
+                                    </template>
+                                </select>
+                                <p class="mt-1 text-[11px] text-slate-400">Pilih jurusan terlebih dahulu untuk menyaring daftar kelas.</p>
+                            @else
+                                <input
+                                    type="text"
+                                    name="kelas"
+                                    id="kelas"
+                                    value="{{ old('kelas') }}"
+                                    placeholder="Contoh: XII RPL 1"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    required
+                                >
+                                <p class="mt-1 text-[11px] text-amber-500">
+                                    Belum ada data kelas. <a href="{{ route('admin-sekolah.school-data.classes.create') }}" class="font-bold underline">Tambah kelas</a> di Data Sekolah.
+                                </p>
+                            @endif
                             @error('kelas')
                                 <p class="mt-1 text-xs text-rose-500 font-medium">{{ $message }}</p>
                             @enderror
