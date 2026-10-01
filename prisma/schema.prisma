@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  password        String
+  role            String   @default("siswa") // admin_platform, admin_sekolah, kepala_sekolah, guru_pembimbing, mentor, siswa
+  avatar          String?
+  phone           String?
+  nisn            String?
+  nip             String?
+  jurusan         String?
+  kelas           String?
+  school_class_id String?
+  school_name     String?
+  bidang          String?
+  company_name    String?
+  position        String?
+  address         String?
+  bio             String?
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  schoolClass SchoolClass? @relation(fields: [school_class_id], references: [id], onDelete: SetNull)
+
+  studentInternships Internship[] @relation("StudentInternships")
+  mentorInternships  Internship[] @relation("MentorInternships")
+  teacherInternships Internship[] @relation("TeacherInternships")
+
+  journals     Journal[]
+  attendances  Attendance[]
+  activityLogs ActivityLog[]
+  notifications Notification[]
+}
+
+model SchoolMajor {
+  id          String        @id @default(uuid())
+  name        String
+  code        String        @unique
+  description String?
+  is_active   Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  classes SchoolClass[]
+}
+
+model SchoolClass {
+  id              String      @id @default(uuid())
+  school_major_id String
+  name            String
+  grade           String      @default("XII")
+  is_active       Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  major SchoolMajor @relation(fields: [school_major_id], references: [id], onDelete: Cascade)
+  users User[]
+}
+
+model Internship {
+  id              String   @id @default(uuid())
+  student_id      String
+  mentor_id       String?
+  teacher_id      String?
+  company_name    String
+  company_address String?
+  start_date      String?
+  end_date        String?
+  status          String   @default("active") // active, completed, cancelled
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  student User  @relation("StudentInternships", fields: [student_id], references: [id], onDelete: Cascade)
+  mentor  User? @relation("MentorInternships", fields: [mentor_id], references: [id], onDelete: SetNull)
+  teacher User? @relation("TeacherInternships", fields: [teacher_id], references: [id], onDelete: SetNull)
+
+  journals    Journal[]
+  attendances Attendance[]
+}
+
+model Journal {
+  id               String   @id @default(uuid())
+  student_id       String
+  internship_id    String?
+  date             String
+  title            String
+  description      String
+  photo_attachment String?
+  status           String   @default("pending") // draft, pending, approved, revision
+  score            Int?
+  feedback         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  student    User        @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  internship Internship? @relation(fields: [internship_id], references: [id], onDelete: SetNull)
+}
+
+model Attendance {
+  id                 String   @id @default(uuid())
+  student_id         String
+  internship_id      String?
+  date               String
+  check_in           String?
+  check_out          String?
+  check_in_photo     String?
+  check_out_photo    String?
+  check_in_location  String?
+  check_out_location String?
+  status             String   @default("present") // present, permission, sick, alpha
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  student    User        @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  internship Internship? @relation(fields: [internship_id], references: [id], onDelete: SetNull)
+}
+
+model SubscriptionPackage {
+  id              String   @id @default(uuid())
+  name            String
+  price           Float
+  duration_months Int      @default(12)
+  max_students    Int      @default(100)
+  features        String?
+  is_active       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subscriptions SchoolSubscription[]
+}
+
+model SchoolSubscription {
+  id               String   @id @default(uuid())
+  school_name      String
+  package_id       String
+  start_date       String?
+  end_date         String?
+  status           String   @default("pending") // pending, approved, rejected, active, expired
+  proof_of_payment String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  package SubscriptionPackage @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  payments PaymentHistory[]
+}
+
+model PaymentHistory {
+  id              String   @id @default(uuid())
+  subscription_id String
+  amount          Float
+  payment_date    String
+  payment_method  String?
+  status          String   @default("completed")
+  transaction_id  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subscription SchoolSubscription @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  user_id     String?
+  action      String
+  description String
+  ip_address  String?
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  user_id   String
+  title     String
+  message   String
+  url       String?
+  is_read   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
