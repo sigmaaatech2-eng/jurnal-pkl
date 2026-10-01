@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { comparePassword, hashPassword, signToken } from '@/lib/auth';
+import { loginSchema } from '@/lib/validations';
 
 const DEFAULT_ACCOUNTS = [
   {
@@ -43,20 +44,23 @@ const DEFAULT_ACCOUNTS = [
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password } = body;
-
-    if (!email || !password) {
+    
+    // Zod validation
+    const parseResult = loginSchema.safeParse(body);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { message: 'Email dan password wajib diisi.' },
+        { message: parseResult.error.errors[0]?.message || 'Data tidak valid.' },
         { status: 400 }
       );
     }
+
+    const { email, password, remember } = parseResult.data;
 
     let user = await prisma.user.findUnique({
       where: { email },
     });
 
-    // Auto-seed account if missing on serverless SQLite
+    // Auto-seed account if missing on cold start / new environment
     if (!user) {
       const matchDefault = DEFAULT_ACCOUNTS.find((acc) => acc.email === email);
       if (matchDefault && password === 'password') {
@@ -108,7 +112,7 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7,
       path: '/',
     });
 

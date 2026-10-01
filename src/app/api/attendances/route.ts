@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/auth';
+import { attendanceSchema } from '@/lib/validations';
+import { uploadStorageFile } from '@/lib/supabase/storage';
 
 export async function GET(request: Request) {
   try {
@@ -51,9 +53,27 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { action, location, photo, status = 'present' } = body;
-    const today = new Date().toISOString().split('T')[0];
-    const nowTime = new Date().toTimeString().split(' ')[0];
+
+    const parseResult = attendanceSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { message: parseResult.error.errors[0]?.message || 'Data absensi tidak valid.' },
+        { status: 400 }
+      );
+    }
+
+    const { action, location, photo, status } = parseResult.data;
+
+    // Server-side trusted timestamp
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const nowTime = now.toTimeString().split(' ')[0];
+
+    let photoUrl = photo || null;
+    if (photo && photo.startsWith('data:')) {
+      const uploaded = await uploadStorageFile('attendance-photos', `attendance-${sessionUser.id}-${action}.jpg`, photo);
+      if (uploaded) photoUrl = uploaded;
+    }
 
     const internship = await prisma.internship.findFirst({
       where: { student_id: sessionUser.id, status: 'active' },
@@ -80,7 +100,7 @@ export async function POST(request: Request) {
           internship_id: internship?.id || null,
           date: today,
           check_in: nowTime,
-          check_in_photo: photo || null,
+          check_in_photo: photoUrl,
           check_in_location: location || null,
           status,
         },
@@ -109,7 +129,7 @@ export async function POST(request: Request) {
         where: { id: attendance.id },
         data: {
           check_out: nowTime,
-          check_out_photo: photo || null,
+          check_out_photo: photoUrl,
           check_out_location: location || null,
         },
       });
