@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/auth';
-import { journalSchema, journalReviewSchema } from '@/lib/validations';
-import { uploadStorageFile } from '@/lib/supabase/storage';
 
 export async function GET(request: Request) {
   try {
@@ -19,22 +17,6 @@ export async function GET(request: Request) {
     if (sessionUser.role === 'siswa') {
       whereClause.student_id = sessionUser.id;
     } else if (studentId) {
-      // Authorization check for non-siswa accessing a specific student
-      if (sessionUser.role === 'mentor') {
-        const checkPlacement = await prisma.internship.findFirst({
-          where: { student_id: studentId, mentor_id: sessionUser.id },
-        });
-        if (!checkPlacement) {
-          return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
-        }
-      } else if (sessionUser.role === 'guru_pembimbing') {
-        const checkPlacement = await prisma.internship.findFirst({
-          where: { student_id: studentId, teacher_id: sessionUser.id },
-        });
-        if (!checkPlacement) {
-          return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
-        }
-      }
       whereClause.student_id = studentId;
     }
 
@@ -68,27 +50,20 @@ export async function POST(request: Request) {
   try {
     const sessionUser = await getSessionUser();
     if (!sessionUser || sessionUser.role !== 'siswa') {
-      return NextResponse.json({ message: 'Akses ditolak. Hanya siswa yang dapat membuat jurnal.' }, { status: 403 });
+      return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
     }
 
     const body = await request.json();
+    const { date, title, description, photo_attachment } = body;
 
-    const parseResult = journalSchema.safeParse(body);
-    if (!parseResult.success) {
+    if (!date || !title || !description) {
       return NextResponse.json(
-        { message: parseResult.error.errors[0]?.message || 'Data jurnal tidak valid.' },
+        { message: 'Tanggal, Judul, dan Deskripsi kegiatan wajib diisi.' },
         { status: 400 }
       );
     }
 
-    const { date, title, description, photo_attachment } = parseResult.data;
-
-    let storageUrl = photo_attachment || null;
-    if (photo_attachment && photo_attachment.startsWith('data:')) {
-      const uploaded = await uploadStorageFile('journal-attachments', `journal-${sessionUser.id}.jpg`, photo_attachment);
-      if (uploaded) storageUrl = uploaded;
-    }
-
+    // Find active placement
     const internship = await prisma.internship.findFirst({
       where: { student_id: sessionUser.id, status: 'active' },
     });
@@ -100,7 +75,7 @@ export async function POST(request: Request) {
         date,
         title,
         description,
-        photo_attachment: storageUrl,
+        photo_attachment: photo_attachment || null,
         status: 'pending',
       },
     });
@@ -125,7 +100,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { id } = body;
+    const { id, title, description, photo_attachment, status, score, feedback } = body;
 
     if (!id) {
       return NextResponse.json({ message: 'ID Jurnal tidak valid.' }, { status: 400 });
@@ -139,58 +114,32 @@ export async function PUT(request: Request) {
       return NextResponse.json({ message: 'Jurnal tidak ditemukan.' }, { status: 404 });
     }
 
-    // Siswa Editing Own Journal
+    // Role checks
     if (sessionUser.role === 'siswa') {
       if (existingJournal.student_id !== sessionUser.id) {
-        return NextResponse.json({ message: 'Akses ditolak. Jurnal ini bukan milik Anda.' }, { status: 403 });
-      }
-
-      const parseResult = journalSchema.safeParse(body);
-      if (!parseResult.success) {
-        return NextResponse.json(
-          { message: parseResult.error.errors[0]?.message || 'Data jurnal tidak valid.' },
-          { status: 400 }
-        );
-      }
-
-      const { title, description, photo_attachment } = parseResult.data;
-
-      let storageUrl = photo_attachment || existingJournal.photo_attachment;
-      if (photo_attachment && photo_attachment.startsWith('data:')) {
-        const uploaded = await uploadStorageFile('journal-attachments', `journal-${sessionUser.id}.jpg`, photo_attachment);
-        if (uploaded) storageUrl = uploaded;
+        return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
       }
 
       const updated = await prisma.journal.update({
         where: { id },
         data: {
-          title,
-          description,
-          photo_attachment: storageUrl,
-          status: 'pending',
+          title: title || existingJournal.title,
+          description: description || existingJournal.description,
+          photo_attachment: photo_attachment !== undefined ? photo_attachment : existingJournal.photo_attachment,
+          status: 'pending', // reset to pending on edit
         },
       });
 
       return NextResponse.json({ message: 'Jurnal berhasil diperbarui.', journal: updated });
     }
 
-    // Mentor or Guru Pembimbing Reviewing Journal
+    // Mentor or Teacher feedback & validation
     if (['mentor', 'guru_pembimbing', 'admin_sekolah'].includes(sessionUser.role)) {
-      const parseResult = journalReviewSchema.safeParse(body);
-      if (!parseResult.success) {
-        return NextResponse.json(
-          { message: parseResult.error.errors[0]?.message || 'Data penilaian tidak valid.' },
-          { status: 400 }
-        );
-      }
-
-      const { status, score, feedback } = parseResult.data;
-
       const updated = await prisma.journal.update({
         where: { id },
         data: {
-          status,
-          score: score !== undefined ? score : existingJournal.score,
+          status: status || existingJournal.status,
+          score: score !== undefined ? (score ? parseInt(score) : null) : existingJournal.score,
           feedback: feedback !== undefined ? feedback : existingJournal.feedback,
         },
       });

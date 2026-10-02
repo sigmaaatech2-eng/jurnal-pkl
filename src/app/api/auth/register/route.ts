@@ -1,21 +1,32 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, signToken } from '@/lib/auth';
-import { registerSchema } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const { name, email, jurusan, kelas, password, password_confirmation } = body;
 
-    const parseResult = registerSchema.safeParse(body);
-    if (!parseResult.success) {
+    if (!name || !email || !jurusan || !kelas || !password) {
       return NextResponse.json(
-        { message: parseResult.error.errors[0]?.message || 'Data registrasi tidak valid.' },
+        { message: 'Semua bidang wajib diisi.' },
         { status: 400 }
       );
     }
 
-    const { name, email, jurusan, kelas, password } = parseResult.data;
+    if (password.length < 8) {
+      return NextResponse.json(
+        { message: 'Password minimal terdiri dari 8 karakter.' },
+        { status: 400 }
+      );
+    }
+
+    if (password !== password_confirmation) {
+      return NextResponse.json(
+        { message: 'Konfirmasi password tidak cocok.' },
+        { status: 400 }
+      );
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
