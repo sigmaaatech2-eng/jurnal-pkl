@@ -17,7 +17,6 @@
 /node_modules
 /.next/
 *.db
-!prisma/dev.db
 *.db-journal
 /public/build
 /public/fonts-manifest.dev.json
@@ -30,4 +29,5 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
 .vercel

@@ -1,44 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { comparePassword, hashPassword, signToken } from '@/lib/auth';
-
-const DEFAULT_ACCOUNTS = [
-  {
-    name: 'Siswa PKL',
-    email: 'siswa@sekolah.sch.id',
-    role: 'siswa',
-    kelas: 'XII RPL 1',
-    jurusan: 'Rekayasa Perangkat Lunak (RPL)',
-  },
-  {
-    name: 'Bpk. Rudi Santoso, S.Kom.',
-    email: 'guru@sekolah.sch.id',
-    role: 'guru_pembimbing',
-    bidang: 'Rekayasa Perangkat Lunak',
-  },
-  {
-    name: 'Bpk. Hendra Pratama, S.T.',
-    email: 'mentor@perusahaan.com',
-    role: 'mentor',
-    company_name: 'PT Solusi Teknologi Nusantara',
-  },
-  {
-    name: 'Admin Sekolah',
-    email: 'admin.sekolah@jurnal-pkl.test',
-    role: 'admin_sekolah',
-  },
-  {
-    name: 'Drs. H. Bambang Purnomo, M.Pd.',
-    email: 'kepsek@sekolah.sch.id',
-    role: 'kepala_sekolah',
-    school_name: 'SMK Negeri 1 Indonesia',
-  },
-  {
-    name: 'Admin Platform',
-    email: 'admin@platform.test',
-    role: 'admin_platform',
-  },
-];
+import { comparePassword, signToken } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
@@ -52,29 +14,9 @@ export async function POST(request: Request) {
       );
     }
 
-    let user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email },
     });
-
-    // Auto-seed account if missing on serverless SQLite
-    if (!user) {
-      const matchDefault = DEFAULT_ACCOUNTS.find((acc) => acc.email === email);
-      if (matchDefault && password === 'password') {
-        const hashedPassword = await hashPassword('password');
-        user = await prisma.user.create({
-          data: {
-            name: matchDefault.name,
-            email: matchDefault.email,
-            password: hashedPassword,
-            role: matchDefault.role,
-            kelas: matchDefault.kelas || null,
-            jurusan: matchDefault.jurusan || null,
-            company_name: matchDefault.company_name || null,
-            school_name: matchDefault.school_name || null,
-          },
-        });
-      }
-    }
 
     if (!user) {
       return NextResponse.json(
@@ -108,7 +50,7 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });
 
