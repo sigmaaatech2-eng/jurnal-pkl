@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <title>Jurnal PKL Online - Platform Dokumentasi & Pemantauan PKL</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-jurnal-pkl.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 

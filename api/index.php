@@ -5,15 +5,25 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Ensure /tmp storage structure for Vercel serverless environment
-if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
-    $storagePath = '/tmp/storage';
-    if (!is_dir($storagePath . '/framework/views')) {
-        @mkdir($storagePath . '/framework/views', 0755, true);
-        @mkdir($storagePath . '/framework/cache/data', 0755, true);
-        @mkdir($storagePath . '/framework/sessions', 0755, true);
-        @mkdir($storagePath . '/logs', 0755, true);
-    }
+// Prepare writable /tmp directories for Vercel Serverless environment
+$tmpStorage = '/tmp/storage';
+if (!is_dir($tmpStorage . '/framework/views')) {
+    @mkdir($tmpStorage . '/framework/views', 0755, true);
+    @mkdir($tmpStorage . '/framework/cache/data', 0755, true);
+    @mkdir($tmpStorage . '/framework/sessions', 0755, true);
+    @mkdir($tmpStorage . '/logs', 0755, true);
+}
+
+// Set environment variables for serverless compatibility
+putenv("VIEW_COMPILED_PATH={$tmpStorage}/framework/views");
+putenv("APP_SERVICES_CACHE={$tmpStorage}/bootstrap-services.php");
+putenv("APP_PACKAGES_CACHE={$tmpStorage}/bootstrap-packages.php");
+putenv("APP_CONFIG_CACHE={$tmpStorage}/bootstrap-config.php");
+putenv("APP_ROUTES_CACHE={$tmpStorage}/bootstrap-routes.php");
+putenv("APP_EVENTS_CACHE={$tmpStorage}/bootstrap-events.php");
+
+if (empty($_ENV['LOG_CHANNEL']) && empty($_SERVER['LOG_CHANNEL'])) {
+    putenv("LOG_CHANNEL=stderr");
 }
 
 // Determine if the application is in maintenance mode...
@@ -28,8 +38,6 @@ require __DIR__.'/../vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
-if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
-    $app->useStoragePath('/tmp/storage');
-}
+$app->useStoragePath($tmpStorage);
 
 $app->handleRequest(Request::capture());

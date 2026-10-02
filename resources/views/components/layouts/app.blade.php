@@ -20,6 +20,7 @@
     <title>
         {{ $title ?? 'Jurnal PKL Online' }}
     </title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-jurnal-pkl.png') }}">
 
     @vite([
         'resources/css/app.css',
