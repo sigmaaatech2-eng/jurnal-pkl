@@ -1,7 +1,6 @@
 *.log
 .DS_Store
 .env
-.env.*
 .env.backup
 .env.production
 .phpactor.json
@@ -15,9 +14,6 @@
 /.zed
 /auth.json
 /node_modules
-/.next/
-*.db
-*.db-journal
 /public/build
 /public/fonts-manifest.dev.json
 /public/hot
