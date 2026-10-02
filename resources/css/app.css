@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* Global Dark Mode form controls styling */
+.dark input,
+.dark select,
+.dark textarea {
+    color-scheme: dark;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+.dark select,
+.dark textarea {
+    color: #f8fafc;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: #94a3b8;
+}
+
+.dark select option {
+    background-color: #0f172a;
+    color: #f8fafc;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.dark input[type="checkbox"],
+.dark input[type="radio"] {
+    color-scheme: dark;
+    accent-color: #2563eb;
+}
+
+/* Smooth custom scrollbars for mobile & desktop */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.6);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.5);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.8);
+}
+
+/* ==========================================================================
+   MULTI-DEVICE ERGONOMICS (Mobile, Tablet, Desktop)
+   ========================================================================== */
+
+/* Fast touch response (eliminates 300ms tap delay) & eliminates blue highlight tap box */
+html,
+body,
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling with touch momentum across all devices */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent unwanted zoom-in on focus on iOS Safari & mobile browsers */
+@media (max-width: 639px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* ==========================================================================
+   TACTILE & RESPONSIVE BUTTON INTERACTIONS
+   ========================================================================== */
+
+/* Buttons & interactive clickables: smooth micro-transition on press */
+button,
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+[role="button"] {
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.15s ease,
+                border-color 0.15s ease,
+                box-shadow 0.15s ease,
+                opacity 0.15s ease;
+    user-select: none;
+}
+
+/* Native tactile press feeling on mobile, tablet, and PC */
+button:active:not(:disabled),
+input[type="submit"]:active:not(:disabled),
+input[type="button"]:active:not(:disabled),
+input[type="reset"]:active:not(:disabled),
+[role="button"]:active:not([aria-disabled="true"]) {
+    transform: scale(0.96);
+}
+
+/* Interactive link buttons (pill / rounded action links) */
+a[class*="bg-"][class*="rounded"]:active,
+a[class*="border-"][class*="rounded"]:active {
+    transform: scale(0.97);
+}
+
+/* Disabled button ergonomics */
+button:disabled,
+input[type="submit"]:disabled,
+input[type="button"]:disabled,
+[aria-disabled="true"] {
+    opacity: 0.55 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    pointer-events: none;
+}
+
+/* Accessible focus visible rings for keyboard & accessibility navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+/* Safe area insets for notched phones & gesture bars */
+.safe-bottom-nav {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    height: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+.safe-main-content {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+    .safe-main-content {
+        padding-bottom: 2.5rem;
+    }
+}
+
+/* Responsive tables with touch momentum scrolling */
+.table-responsive,
+.overflow-x-auto {
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+}
