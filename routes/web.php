@@ -1,39 +1,77 @@
 <?php
 
+use App\Http\Controllers\AdminPlatformController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HeadmasterController;
+use App\Http\Controllers\InternshipController;
 use App\Http\Controllers\JournalController;
 use App\Http\Controllers\MentorController;
-use App\Http\Controllers\StudentController;
-use App\Http\Controllers\TeacherJournalController;
-use App\Http\Controllers\TeacherDashboardController;
-use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\InternshipController;
-use App\Http\Controllers\SchoolAdminDashboardController;
-use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\HeadmasterController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\AdminPlatformController;
+use App\Http\Controllers\SchoolAdminDashboardController;
 use App\Http\Controllers\SchoolDataController;
-
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\TeacherDashboardController;
+use App\Http\Controllers\TeacherJournalController;
+use App\Http\Controllers\UserManagementController;
+use App\Models\ActivityLog;
+use App\Models\SchoolClass;
+use App\Models\SchoolMajor;
+use App\Models\SchoolSubscription;
+use App\Models\SubscriptionPackage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
-
 /*
 |--------------------------------------------------------------------------
-| HOME
+| HOME & PENGAJUAN LANGGANAN
 |--------------------------------------------------------------------------
 */
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    try {
+        $packages = SubscriptionPackage::where('is_active', true)->get();
+    } catch (Throwable $e) {
+        $packages = collect();
+    }
 
+    return view('welcome', compact('packages'));
+})->name('home');
+
+Route::post('/apply-subscription', function (Request $request) {
+    $validated = $request->validate([
+        'school_name' => 'required|string|max:255',
+        'school_email' => 'required|email|max:255',
+        'school_phone' => 'nullable|string|max:50',
+        'school_address' => 'nullable|string',
+        'package_id' => 'required|exists:subscription_packages,id',
+    ], [
+        'school_name.required' => 'Nama Sekolah / Institusi wajib diisi.',
+        'school_email.required' => 'Email Kontak Sekolah wajib diisi.',
+        'package_id.required' => 'Paket Langganan wajib dipilih.',
+        'package_id.exists' => 'Paket Langganan yang dipilih tidak valid.',
+    ]);
+
+    $package = SubscriptionPackage::findOrFail($validated['package_id']);
+
+    $subscription = SchoolSubscription::create([
+        'school_name' => $validated['school_name'],
+        'school_email' => $validated['school_email'],
+        'school_phone' => $validated['school_phone'] ?? null,
+        'school_address' => $validated['school_address'] ?? null,
+        'package_id' => $package->id,
+        'status' => 'pending',
+    ]);
+
+    ActivityLog::log('request_subscription', "Sekolah \"{$subscription->school_name}\" mengajukan langganan paket \"{$package->name}\".", $subscription);
+
+    return back()->with('success_subscription', "Pengajuan langganan sekolah \"{$subscription->school_name}\" untuk Paket {$package->name} berhasil dikirim! Tim Admin Platform akan segera meninjau dan mengaktifkan akun Anda.");
+})->name('public.apply-subscription');
 
 /*
 |--------------------------------------------------------------------------
@@ -43,11 +81,11 @@ Route::get('/', function () {
 
 // Menampilkan halaman register
 Route::get('/register', function () {
-    $majors  = \App\Models\SchoolMajor::active()->orderBy('name')->get();
-    $classes = \App\Models\SchoolClass::active()->with('major')->orderBy('name')->get();
+    $majors = SchoolMajor::active()->orderBy('name')->get();
+    $classes = SchoolClass::active()->with('major')->orderBy('name')->get();
+
     return view('auth.register', compact('majors', 'classes'));
 })->middleware('guest')->name('register');
-
 
 // Memproses register
 Route::post('/register', function (Request $request) {
@@ -73,21 +111,21 @@ Route::post('/register', function (Request $request) {
     // Jika jurusan dikirim sebagai ID major, ambil namanya
     $jurusanValue = $validated['jurusan'];
     if (is_numeric($validated['jurusan'])) {
-        $majorModel = \App\Models\SchoolMajor::find($validated['jurusan']);
+        $majorModel = SchoolMajor::find($validated['jurusan']);
         if ($majorModel) {
             $jurusanValue = $majorModel->name;
         }
     }
 
-    $schoolClass = \App\Models\SchoolClass::where('name', $validated['kelas'])->first();
+    $schoolClass = SchoolClass::where('name', $validated['kelas'])->first();
 
     $user = User::create([
-        'name'            => $validated['name'],
-        'email'           => $validated['email'],
-        'jurusan'         => $jurusanValue,
-        'kelas'           => $validated['kelas'],
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'jurusan' => $jurusanValue,
+        'kelas' => $validated['kelas'],
         'school_class_id' => $schoolClass?->id,
-        'password'        => Hash::make($validated['password']),
+        'password' => Hash::make($validated['password']),
     ]);
 
     /*
@@ -104,7 +142,6 @@ Route::post('/register', function (Request $request) {
 
 })->middleware('guest')->name('register.store');
 
-
 /*
 |--------------------------------------------------------------------------
 | LOGIN
@@ -114,7 +151,6 @@ Route::post('/register', function (Request $request) {
 Route::get('/login', function () {
     return view('auth.login');
 })->middleware('guest')->name('login');
-
 
 Route::post('/login', function (Request $request) {
 
@@ -146,7 +182,6 @@ Route::post('/login', function (Request $request) {
 
 })->middleware('guest')->name('login.attempt');
 
-
 /*
 |--------------------------------------------------------------------------
 | LOGOUT
@@ -165,7 +200,6 @@ Route::post('/logout', function (Request $request) {
 
 })->middleware('auth')->name('logout');
 
-
 /*
 |--------------------------------------------------------------------------
 | PROFILE & AKUN
@@ -179,7 +213,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.destroy');
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | MAIN DASHBOARD
@@ -190,7 +223,6 @@ Route::get(
     '/dashboard',
     [DashboardController::class, 'index']
 )->middleware('auth')->name('dashboard');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -210,6 +242,10 @@ Route::middleware(['auth', 'role:admin_platform'])
         // Subscriber Sekolah
         Route::get('/schools', [AdminPlatformController::class, 'schools'])
             ->name('schools.index');
+        Route::get('/schools/create', [AdminPlatformController::class, 'createSchool'])
+            ->name('schools.create');
+        Route::post('/schools', [AdminPlatformController::class, 'storeSchool'])
+            ->name('schools.store');
         Route::get('/schools/{school}', [AdminPlatformController::class, 'schoolDetail'])
             ->name('schools.show');
 
@@ -248,6 +284,8 @@ Route::middleware(['auth', 'role:admin_platform'])
             ->name('users.show');
         Route::post('/users/{user}/role', [AdminPlatformController::class, 'updateUserRole'])
             ->name('users.role');
+        Route::put('/users/{user}/password', [AdminPlatformController::class, 'updateUserPassword'])
+            ->name('users.password');
         Route::post('/users/{user}/toggle', [AdminPlatformController::class, 'toggleUserStatus'])
             ->name('users.toggle');
         Route::delete('/users/{user}', [AdminPlatformController::class, 'deleteUser'])
@@ -270,7 +308,6 @@ Route::middleware(['auth', 'role:admin_platform'])
             ->name('reports.index');
     });
 
-
 /*
 |--------------------------------------------------------------------------
 | ADMIN SEKOLAH
@@ -281,7 +318,7 @@ Route::get(
     [SchoolAdminDashboardController::class, 'index']
 )->middleware([
     'auth',
-    'role:admin_sekolah'
+    'role:admin_sekolah',
 ])->name('admin-sekolah.dashboard');
 
 Route::middleware(['auth', 'role:admin_sekolah'])
@@ -302,7 +339,6 @@ Route::middleware(['auth', 'role:admin_sekolah'])
         Route::get('/students/{student}', [StudentController::class, 'show'])
             ->name('students.show');
 
-
         // Manajemen User
         Route::get('/users', [UserManagementController::class, 'index'])
             ->name('users.index');
@@ -315,7 +351,6 @@ Route::middleware(['auth', 'role:admin_sekolah'])
 
         Route::post('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])
             ->name('users.reset-password');
-
 
         // Data PKL
         Route::get('/internships', [InternshipController::class, 'index'])
@@ -351,7 +386,6 @@ Route::middleware(['auth', 'role:admin_sekolah'])
         });
     });
 
-
 /*
 |--------------------------------------------------------------------------
 | KEPALA SEKOLAH
@@ -382,7 +416,6 @@ Route::middleware(['auth', 'role:kepala_sekolah'])
             ->name('recap.index');
     });
 
-
 /*
 |--------------------------------------------------------------------------
 | GURU PEMBIMBING
@@ -391,7 +424,7 @@ Route::middleware(['auth', 'role:kepala_sekolah'])
 
 Route::middleware([
     'auth',
-    'role:guru_pembimbing'
+    'role:guru_pembimbing',
 ])->prefix('guru-pembimbing')
     ->name('guru-pembimbing.')
     ->group(function () {
@@ -407,7 +440,6 @@ Route::middleware([
             [TeacherDashboardController::class, 'index']
         )->name('dashboard');
 
-
         /*
         |--------------------------------------------------------------------------
         | MONITORING JURNAL
@@ -419,12 +451,10 @@ Route::middleware([
             [TeacherJournalController::class, 'index']
         )->name('journals.index');
 
-
         Route::get(
             '/journals/{journal}',
             [TeacherJournalController::class, 'show']
         )->name('journals.show');
-
 
         /*
         |--------------------------------------------------------------------------
@@ -452,7 +482,6 @@ Route::middleware([
             [TeacherJournalController::class, 'studentDetail']
         )->name('students.show');
 
-
         /*
         |--------------------------------------------------------------------------
         | MONITORING ABSENSI & REKAP
@@ -474,7 +503,6 @@ Route::middleware([
 
     });
 
-
 /*
 |--------------------------------------------------------------------------
 | MENTOR
@@ -483,7 +511,7 @@ Route::middleware([
 
 Route::middleware([
     'auth',
-    'role:mentor'
+    'role:mentor',
 ])->prefix('mentor')
     ->name('mentor.')
     ->group(function () {
@@ -503,8 +531,6 @@ Route::middleware([
 
     });
 
-
-
 /*
 |--------------------------------------------------------------------------
 | SISWA
@@ -513,7 +539,7 @@ Route::middleware([
 
 Route::middleware([
     'auth',
-    'role:siswa'
+    'role:siswa',
 ])->prefix('siswa')
     ->name('siswa.')
     ->group(function () {
@@ -528,7 +554,6 @@ Route::middleware([
             '/dashboard',
             [StudentDashboardController::class, 'index']
         )->name('dashboard');
-
 
         /*
         |--------------------------------------------------------------------------
@@ -556,42 +581,35 @@ Route::middleware([
             }
         )->name('journals.index');
 
-
         Route::get(
             '/journals/create',
             [JournalController::class, 'create']
         )->name('journals.create');
-
 
         Route::post(
             '/journals',
             [JournalController::class, 'store']
         )->name('journals.store');
 
-
         Route::get(
             '/journals/{journal}/edit',
             [JournalController::class, 'edit']
         )->name('journals.edit');
-
 
         Route::put(
             '/journals/{journal}',
             [JournalController::class, 'update']
         )->name('journals.update');
 
-
         Route::delete(
             '/journals/{journal}',
             [JournalController::class, 'destroy']
         )->name('journals.destroy');
 
-
         Route::get(
             '/journals/{journal}',
             [JournalController::class, 'show']
         )->name('journals.show');
-
 
         /*
         |--------------------------------------------------------------------------
@@ -604,12 +622,10 @@ Route::middleware([
             [AttendanceController::class, 'index']
         )->name('attendances.index');
 
-
         Route::post(
             '/attendances/check-in',
             [AttendanceController::class, 'checkIn']
         )->name('attendances.check-in');
-
 
         Route::post(
             '/attendances/check-out',

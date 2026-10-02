@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Internship;
-use App\Models\User;
-use App\Models\SchoolMajor;
 use App\Models\SchoolClass;
+use App\Models\SchoolMajor;
+use App\Models\SchoolSubscription;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -33,7 +34,7 @@ class StudentController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -61,13 +62,13 @@ class StudentController extends Controller
         });
 
         // Counter untuk badge tab filter
-        $totalCount      = (clone $pureStudentQuery)->count();
-        $activeCount     = Internship::where('status', 'active')->whereHas('student', function ($q) {
+        $totalCount = (clone $pureStudentQuery)->count();
+        $activeCount = Internship::where('status', 'active')->whereHas('student', function ($q) {
             $q->role('siswa')->whereDoesntHave('roles', function ($sq) {
                 $sq->whereIn('name', ['guru_pembimbing', 'mentor', 'admin_sekolah', 'kepala_sekolah']);
             });
         })->distinct('student_id')->count('student_id');
-        $completedCount  = Internship::where('status', 'completed')->whereHas('student', function ($q) {
+        $completedCount = Internship::where('status', 'completed')->whereHas('student', function ($q) {
             $q->role('siswa')->whereDoesntHave('roles', function ($sq) {
                 $sq->whereIn('name', ['guru_pembimbing', 'mentor', 'admin_sekolah', 'kepala_sekolah']);
             });
@@ -90,8 +91,9 @@ class StudentController extends Controller
      */
     public function create()
     {
-        $majors  = SchoolMajor::active()->orderBy('name')->get();
+        $majors = SchoolMajor::active()->orderBy('name')->get();
         $classes = SchoolClass::active()->with('major')->orderBy('name')->get();
+
         return view('admin-sekolah.students.create', compact('majors', 'classes'));
     }
 
@@ -101,15 +103,42 @@ class StudentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
-            'jurusan'  => ['nullable'],
-            'kelas'    => ['nullable', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'jurusan' => ['nullable'],
+            'kelas' => ['nullable', 'string', 'max:100'],
             'password' => ['required', 'min:8', 'confirmed'],
         ]);
 
+        // Cek Kuota Paket Langganan Sekolah (max_students)
+        $adminUser = auth()->user();
+        if ($adminUser) {
+            $schoolSubscription = SchoolSubscription::where('status', 'active')
+                ->where(function ($q) use ($adminUser) {
+                    $q->where('admin_user_id', $adminUser->id);
+                    if ($adminUser->school_name) {
+                        $q->orWhere('school_name', $adminUser->school_name);
+                    }
+                })
+                ->with('package')
+                ->first();
+
+            if ($schoolSubscription && $schoolSubscription->package) {
+                $maxStudents = $schoolSubscription->package->max_students;
+                $currentStudentsCount = User::role('siswa')
+                    ->where('school_name', $adminUser->school_name)
+                    ->count();
+
+                if ($currentStudentsCount >= $maxStudents) {
+                    return back()
+                        ->withErrors(['email' => "Kuota Siswa PKL pada paket langganan \"{$schoolSubscription->package->name}\" telah mencapai batas maksimal ({$maxStudents} Siswa). Silakan hubungi Admin Platform untuk upgrade paket."])
+                        ->withInput();
+                }
+            }
+        }
+
         $jurusanValue = $validated['jurusan'] ?? null;
-        if (!empty($jurusanValue) && is_numeric($jurusanValue)) {
+        if (! empty($jurusanValue) && is_numeric($jurusanValue)) {
             $majorModel = SchoolMajor::find($jurusanValue);
             if ($majorModel) {
                 $jurusanValue = $majorModel->name;
@@ -117,10 +146,10 @@ class StudentController extends Controller
         }
 
         $student = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'jurusan'  => $jurusanValue,
-            'kelas'    => $validated['kelas'] ?? null,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'jurusan' => $jurusanValue,
+            'kelas' => $validated['kelas'] ?? null,
             'password' => Hash::make($validated['password']),
         ]);
 
@@ -137,7 +166,7 @@ class StudentController extends Controller
     public function show(User $student)
     {
         // Pastikan pengguna bertindak sebagai siswa
-        if (!$student->hasRole('siswa')) {
+        if (! $student->hasRole('siswa')) {
             abort(404, 'Data siswa tidak ditemukan.');
         }
 
@@ -156,17 +185,17 @@ class StudentController extends Controller
         $currentInternship = $activeInternship ?? $student->studentInternships->first();
 
         // Ringkasan Jurnal
-        $journals         = $currentInternship ? $currentInternship->journals()->latest('date')->take(8)->get() : collect();
-        $totalJournals    = $currentInternship ? $currentInternship->journals()->count() : 0;
+        $journals = $currentInternship ? $currentInternship->journals()->latest('date')->take(8)->get() : collect();
+        $totalJournals = $currentInternship ? $currentInternship->journals()->count() : 0;
         $approvedJournals = $currentInternship ? $currentInternship->journals()->where('status', 'approved')->count() : 0;
-        $pendingJournals  = $currentInternship ? $currentInternship->journals()->where('status', 'pending')->count() : 0;
+        $pendingJournals = $currentInternship ? $currentInternship->journals()->where('status', 'pending')->count() : 0;
         $rejectedJournals = $currentInternship ? $currentInternship->journals()->where('status', 'rejected')->count() : 0;
 
         // Ringkasan Absensi
-        $attendances      = $currentInternship ? $currentInternship->attendances()->latest('date')->take(8)->get() : collect();
+        $attendances = $currentInternship ? $currentInternship->attendances()->latest('date')->take(8)->get() : collect();
         $totalAttendances = $currentInternship ? $currentInternship->attendances()->count() : 0;
-        $presentCount     = $currentInternship ? $currentInternship->attendances()->where('status', 'present')->count() : 0;
-        $lateCount        = $currentInternship ? $currentInternship->attendances()->where('status', 'late')->count() : 0;
+        $presentCount = $currentInternship ? $currentInternship->attendances()->where('status', 'present')->count() : 0;
+        $lateCount = $currentInternship ? $currentInternship->attendances()->where('status', 'late')->count() : 0;
 
         return view('admin-sekolah.students.show', compact(
             'student',

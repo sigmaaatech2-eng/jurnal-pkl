@@ -55,6 +55,26 @@
         </div>
     </div>
 
+    {{-- FLASH ALERT --}}
+    @if (session('success'))
+        <div class="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span>{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/20 dark:bg-rose-500/10">
+            <ul class="list-disc list-inside space-y-1 text-xs text-rose-700 dark:text-rose-300">
+                @foreach ($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     {{-- REJECTION REASON ALERT (IF REJECTED) --}}
     @if ($school->status === 'rejected' && $school->rejection_reason)
         <div class="mb-6 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300">
@@ -109,6 +129,77 @@
                     </div>
                 </dl>
             </div>
+
+            {{-- AKUN ADMIN SEKOLAH & GANTI PASSWORD --}}
+            @if ($school->adminUser)
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900" x-data="{ openResetPassword: false }">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-white">Akun Administrator Sekolah</h3>
+                            <p class="text-xs text-slate-400">Pengelola akun utama untuk {{ $school->school_name }}</p>
+                        </div>
+                        <button
+                            type="button"
+                            @click="openResetPassword = !openResetPassword"
+                            class="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100 transition dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+                            </svg>
+                            <span>Ganti Password Admin</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div class="rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                            <span class="text-slate-400 block">Nama Admin:</span>
+                            <strong class="text-sm font-bold text-slate-800 dark:text-white">{{ $school->adminUser->name }}</strong>
+                        </div>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                            <span class="text-slate-400 block">Email Login:</span>
+                            <strong class="text-sm font-bold text-slate-800 dark:text-white">{{ $school->adminUser->email }}</strong>
+                        </div>
+                    </div>
+
+                    {{-- Form Reset Password --}}
+                    <div x-show="openResetPassword" x-cloak class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <form action="{{ route('admin-platform.users.password', $school->adminUser->id) }}" method="POST" class="space-y-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Password Baru</label>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        required
+                                        placeholder="Min 6 karakter"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 outline-none transition focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Konfirmasi Password Baru</label>
+                                    <input
+                                        type="password"
+                                        name="password_confirmation"
+                                        required
+                                        placeholder="Ulangi password baru"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-800 outline-none transition focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                    >
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2 pt-1">
+                                <button type="button" @click="openResetPassword = false" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">
+                                    Batal
+                                </button>
+                                <button type="submit" class="rounded-xl bg-amber-600 px-5 py-2 text-xs font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-700 transition">
+                                    Simpan Password Baru
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
 
             {{-- RIWAYAT TRANSAKSI PEMBAYARAN --}}
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">

@@ -10,7 +10,7 @@
                         Portal Administrator Sekolah
                     </span>
                     <h1 class="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-                        Selamat datang, {{ auth()->user()->name }} 👋
+                        Selamat datang, {{ auth()->user()->name }} 
                     </h1>
                     <p class="mt-1 text-sm text-blue-100">
                         Pantau seluruh data siswa, status penempatan PKL, guru pembimbing, dan mentor secara real-time.

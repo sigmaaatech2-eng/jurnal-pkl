@@ -8,8 +8,11 @@ use App\Models\PaymentHistory;
 use App\Models\SchoolSubscription;
 use App\Models\SubscriptionPackage;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class AdminPlatformController extends Controller
@@ -94,7 +97,7 @@ class AdminPlatformController extends Controller
         $query = SchoolSubscription::with(['package', 'adminUser', 'approvedBy']);
 
         if ($request->filled('search')) {
-            $query->where('school_name', 'like', '%' . $request->search . '%');
+            $query->where('school_name', 'like', '%'.$request->search.'%');
         }
 
         if ($request->filled('status')) {
@@ -117,7 +120,86 @@ class AdminPlatformController extends Controller
     public function schoolDetail(SchoolSubscription $school)
     {
         $school->load(['package', 'adminUser', 'approvedBy', 'payments.confirmedBy']);
+
         return view('admin-platform.schools.show', compact('school'));
+    }
+
+    public function createSchool()
+    {
+        $packages = SubscriptionPackage::where('is_active', true)->get();
+
+        return view('admin-platform.schools.create', compact('packages'));
+    }
+
+    public function storeSchool(Request $request)
+    {
+        $validated = $request->validate([
+            'school_name' => 'required|string|max:255',
+            'school_email' => 'required|email|max:255',
+            'school_phone' => 'nullable|string|max:50',
+            'school_address' => 'nullable|string',
+            'package_id' => 'required|exists:subscription_packages,id',
+            'admin_name' => 'required|string|max:255',
+            'admin_email' => 'required|email|unique:users,email',
+            'admin_password' => 'required|string|min:6',
+        ], [
+            'school_name.required' => 'Nama Sekolah wajib diisi.',
+            'school_email.required' => 'Email Sekolah wajib diisi.',
+            'package_id.required' => 'Paket Langganan wajib dipilih.',
+            'admin_name.required' => 'Nama Admin Sekolah wajib diisi.',
+            'admin_email.required' => 'Email Admin Sekolah wajib diisi.',
+            'admin_email.unique' => 'Email Admin Sekolah sudah terdaftar di sistem.',
+            'admin_password.required' => 'Password Admin Sekolah wajib diisi.',
+            'admin_password.min' => 'Password minimal 6 karakter.',
+        ]);
+
+        $package = SubscriptionPackage::findOrFail($validated['package_id']);
+
+        // 1. Buat Akun Admin Sekolah
+        $adminUser = User::create([
+            'name' => $validated['admin_name'],
+            'email' => $validated['admin_email'],
+            'password' => Hash::make($validated['admin_password']),
+            'school_name' => $validated['school_name'],
+            'phone' => $validated['school_phone'] ?? null,
+            'address' => $validated['school_address'] ?? null,
+        ]);
+        $adminUser->assignRole('admin_sekolah');
+
+        // 2. Buat Data Langganan Sekolah Aktif
+        $startDate = now();
+        $endDate = now()->addMonths($package->duration_months);
+
+        $subscription = SchoolSubscription::create([
+            'school_name' => $validated['school_name'],
+            'school_email' => $validated['school_email'],
+            'school_phone' => $validated['school_phone'] ?? null,
+            'school_address' => $validated['school_address'] ?? null,
+            'package_id' => $package->id,
+            'admin_user_id' => $adminUser->id,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'status' => 'active',
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+
+        // 3. Catat Riwayat Pembayaran (Lunas)
+        PaymentHistory::create([
+            'subscription_id' => $subscription->id,
+            'amount' => $package->price,
+            'payment_method' => 'manual_transfer',
+            'payment_proof' => null,
+            'status' => 'paid',
+            'confirmed_by' => auth()->id(),
+            'confirmed_at' => now(),
+            'transaction_code' => 'INV-'.strtoupper(uniqid()),
+        ]);
+
+        ActivityLog::log('create_school_subscription', "Sekolah \"{$subscription->school_name}\" dan Akun Admin Sekolah \"{$adminUser->name}\" ({$adminUser->email}) berhasil dibuat.", $subscription);
+
+        return redirect()->route('admin-platform.schools.index')
+            ->with('success', "Sekolah \"{$subscription->school_name}\" dan Akun Admin Sekolah ({$adminUser->email}) berhasil dibuat.");
     }
 
     /*
@@ -156,12 +238,14 @@ class AdminPlatformController extends Controller
             'max_mentors' => 'required|integer|min:1',
             'duration_months' => 'required|integer|min:1',
             'features' => 'nullable|array',
-            'features.*' => 'string',
+            'features.*' => 'nullable|string',
         ]);
 
-        // Filter features yang kosong
-        if (!empty($validated['features'])) {
-            $validated['features'] = array_filter($validated['features']);
+        // Filter features yang kosong/null
+        if (! empty($validated['features'])) {
+            $validated['features'] = array_values(array_filter($validated['features'], fn ($f) => ! is_null($f) && trim($f) !== ''));
+        } else {
+            $validated['features'] = [];
         }
 
         $package = SubscriptionPackage::create($validated);
@@ -188,11 +272,13 @@ class AdminPlatformController extends Controller
             'max_mentors' => 'required|integer|min:1',
             'duration_months' => 'required|integer|min:1',
             'features' => 'nullable|array',
-            'features.*' => 'string',
+            'features.*' => 'nullable|string',
         ]);
 
-        if (!empty($validated['features'])) {
-            $validated['features'] = array_values(array_filter($validated['features']));
+        if (! empty($validated['features'])) {
+            $validated['features'] = array_values(array_filter($validated['features'], fn ($f) => ! is_null($f) && trim($f) !== ''));
+        } else {
+            $validated['features'] = [];
         }
 
         $package->update($validated);
@@ -200,12 +286,12 @@ class AdminPlatformController extends Controller
         ActivityLog::log('update_package', "Paket \"{$package->name}\" diperbarui.", $package);
 
         return redirect()->route('admin-platform.packages.index')
-            ->with('success', "Paket berhasil diperbarui.");
+            ->with('success', 'Paket berhasil diperbarui.');
     }
 
     public function togglePackage(SubscriptionPackage $package)
     {
-        $package->update(['is_active' => !$package->is_active]);
+        $package->update(['is_active' => ! $package->is_active]);
         $status = $package->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
         ActivityLog::log('toggle_package', "Paket \"{$package->name}\" {$status}.", $package);
@@ -225,7 +311,7 @@ class AdminPlatformController extends Controller
             ->where('status', 'pending');
 
         if ($request->filled('search')) {
-            $query->where('school_name', 'like', '%' . $request->search . '%');
+            $query->where('school_name', 'like', '%'.$request->search.'%');
         }
 
         $pendingSubscriptions = $query->latest()->paginate(15)->withQueryString();
@@ -243,6 +329,7 @@ class AdminPlatformController extends Controller
     {
         $subscription->load(['package', 'adminUser']);
         $packages = SubscriptionPackage::where('is_active', true)->get();
+
         return view('admin-platform.approvals.show', compact('subscription', 'packages'));
     }
 
@@ -254,12 +341,34 @@ class AdminPlatformController extends Controller
         ]);
 
         $package = SubscriptionPackage::findOrFail($validated['package_id']);
-        $startDate = \Carbon\Carbon::parse($validated['start_date']);
+        $startDate = Carbon::parse($validated['start_date']);
         $endDate = $startDate->copy()->addMonths($package->duration_months);
+
+        // Buatkan akun Admin Sekolah otomatis jika belum ada
+        $adminUserId = $subscription->admin_user_id;
+        if (! $adminUserId) {
+            $adminEmail = $subscription->school_email ?? ('admin.'.Str::slug($subscription->school_name).'@sekolah.sch.id');
+            $adminUser = User::where('email', $adminEmail)->first();
+
+            if (! $adminUser) {
+                $adminUser = User::create([
+                    'name' => 'Admin '.$subscription->school_name,
+                    'email' => $adminEmail,
+                    'password' => Hash::make('password'),
+                    'school_name' => $subscription->school_name,
+                    'phone' => $subscription->school_phone,
+                    'address' => $subscription->school_address,
+                ]);
+                $adminUser->assignRole('admin_sekolah');
+            }
+
+            $adminUserId = $adminUser->id;
+        }
 
         $subscription->update([
             'status' => 'active',
             'package_id' => $package->id,
+            'admin_user_id' => $adminUserId,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'approved_by' => auth()->id(),
@@ -304,7 +413,7 @@ class AdminPlatformController extends Controller
 
         if ($request->filled('search')) {
             $query->whereHas('subscription', function ($q) use ($request) {
-                $q->where('school_name', 'like', '%' . $request->search . '%');
+                $q->where('school_name', 'like', '%'.$request->search.'%');
             });
         }
 
@@ -333,22 +442,28 @@ class AdminPlatformController extends Controller
 
     public function users(Request $request)
     {
-        $query = User::with('roles');
+        // Hanya kelola role admin_platform dan admin_sekolah
+        $allowedRoles = ['admin_platform', 'admin_sekolah'];
+
+        $query = User::whereHas('roles', function ($q) use ($allowedRoles) {
+            $q->whereIn('name', $allowedRoles);
+        })->with('roles');
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('email', 'like', '%' . $request->search . '%');
+                $q->where('name', 'like', '%'.$request->search.'%')
+                    ->orWhere('email', 'like', '%'.$request->search.'%');
             });
         }
 
-        if ($request->filled('role')) {
+        if ($request->filled('role') && in_array($request->role, $allowedRoles)) {
             $query->role($request->role);
         }
 
         $users = $query->latest()->paginate(20)->withQueryString();
-        $roles = Role::orderBy('name')->get();
-        $totalCount = User::count();
+        $roles = Role::whereIn('name', $allowedRoles)->orderBy('name')->get();
+
+        $totalCount = User::whereHas('roles', fn ($q) => $q->whereIn('name', $allowedRoles))->count();
         $totalByRole = [];
         foreach ($roles as $role) {
             $totalByRole[$role->name] = User::role($role->name)->count();
@@ -360,15 +475,17 @@ class AdminPlatformController extends Controller
     public function userDetail(User $user)
     {
         $user->load('roles');
-        $roles = Role::orderBy('name')->get();
+        $allowedRoles = ['admin_platform', 'admin_sekolah'];
+        $roles = Role::whereIn('name', $allowedRoles)->orderBy('name')->get();
         $recentLogs = ActivityLog::where('user_id', $user->id)->latest()->take(20)->get();
+
         return view('admin-platform.users.show', compact('user', 'roles', 'recentLogs'));
     }
 
     public function updateUserRole(Request $request, User $user)
     {
         $validated = $request->validate([
-            'role' => 'required|string|exists:roles,name',
+            'role' => 'required|string|in:admin_platform,admin_sekolah',
         ]);
 
         // Cegah ubah role admin platform sendiri
@@ -381,7 +498,30 @@ class AdminPlatformController extends Controller
 
         ActivityLog::log('update_user_role', "Role user \"{$user->name}\" diubah dari \"{$oldRole}\" ke \"{$validated['role']}\".", $user);
 
-        return back()->with('success', "Role user berhasil diperbarui.");
+        return back()->with('success', 'Role user berhasil diperbarui.');
+    }
+
+    public function updateUserPassword(Request $request, User $user)
+    {
+        if (! $user->hasAnyRole(['admin_sekolah', 'admin_platform'])) {
+            return back()->withErrors(['password' => 'Anda hanya dapat mengubah password user Administrator.']);
+        }
+
+        $validated = $request->validate([
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password baru minimal 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        ActivityLog::log('update_user_password', "Password akun \"{$user->name}\" ({$user->email}) berhasil diperbarui oleh Admin Platform.", $user);
+
+        return back()->with('success', "Password untuk akun \"{$user->name}\" ({$user->email}) berhasil diperbarui.");
     }
 
     public function toggleUserStatus(User $user)
@@ -428,11 +568,12 @@ class AdminPlatformController extends Controller
     public function roles()
     {
         $roles = Role::withCount('permissions')->get();
-        $allPermissions = \Spatie\Permission\Models\Permission::orderBy('name')->get();
+        $allPermissions = Permission::orderBy('name')->get();
 
         // Group permissions by category
         $permissionGroups = $allPermissions->groupBy(function ($p) {
             $parts = explode('-', $p->name, 2);
+
             return count($parts) > 1 ? $parts[0] : 'other';
         });
 
@@ -442,7 +583,7 @@ class AdminPlatformController extends Controller
     public function roleDetail(Role $role)
     {
         $role->load('permissions');
-        $allPermissions = \Spatie\Permission\Models\Permission::orderBy('name')->get();
+        $allPermissions = Permission::orderBy('name')->get();
         $users = User::role($role->name)->take(10)->get();
         $userCount = User::role($role->name)->count();
 
@@ -475,7 +616,7 @@ class AdminPlatformController extends Controller
         $query = ActivityLog::with('user');
 
         if ($request->filled('search')) {
-            $query->where('description', 'like', '%' . $request->search . '%');
+            $query->where('description', 'like', '%'.$request->search.'%');
         }
 
         if ($request->filled('action')) {

@@ -32,6 +32,13 @@
     x-data="{
         darkMode: document.documentElement.classList.contains('dark'),
         mobileMenuOpen: false,
+        applyModalOpen: false,
+        selectedPackage: null,
+
+        openApplyModal(pkg) {
+            this.selectedPackage = pkg;
+            this.applyModalOpen = true;
+        },
 
         toggleDarkMode() {
             this.darkMode = !this.darkMode;
@@ -69,6 +76,9 @@
                 </a>
                 <a href="#pengguna" class="text-sm font-medium text-slate-600 transition hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400">
                     Pengguna
+                </a>
+                <a href="#paket" class="text-sm font-medium text-slate-600 transition hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400">
+                    Paket Langganan
                 </a>
             </nav>
 
@@ -439,6 +449,99 @@
             </div>
         </section>
 
+        {{-- 5.5. PAKET LANGGANAN SEKOLAH --}}
+        <section id="paket" class="border-t border-slate-200/80 py-16 dark:border-slate-800/80 sm:py-24">
+            <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                        Pilihan Berlangganan
+                    </p>
+                    <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                        Paket Langganan Sekolah
+                    </h2>
+                    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+                        Pilih paket komersial yang sesuai dengan skala sekolah Anda. Ajukan permohonan untuk mengaktifkan akun Admin Sekolah.
+                    </p>
+                </div>
+
+                @if (session('success_subscription'))
+                    <div class="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm font-medium text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 shadow-lg shadow-emerald-500/10">
+                        <div class="flex items-center gap-3">
+                            <svg class="h-6 w-6 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <span>{{ session('success_subscription') }}</span>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="mt-12 grid gap-8 lg:grid-cols-3">
+                    @foreach ($packages as $pkg)
+                        <div class="relative flex flex-col justify-between rounded-3xl border border-slate-200/90 bg-white p-8 shadow-xl shadow-slate-200/50 transition hover:-translate-y-1 hover:border-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/40">
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ $pkg->name }}</h3>
+                                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-extrabold text-blue-600 dark:bg-blue-950 dark:text-blue-300 dark:border dark:border-blue-500/30">
+                                        {{ $pkg->duration_months }} Bulan
+                                    </span>
+                                </div>
+
+                                <p class="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                                    {{ $pkg->description }}
+                                </p>
+
+                                <div class="mt-6 border-t border-b border-slate-100 py-4 dark:border-slate-800">
+                                    <div class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                                        {{ $pkg->price_formatted }}
+                                    </div>
+                                    <span class="text-xs text-slate-400 dark:text-slate-400">per {{ $pkg->duration_months }} bulan langganan</span>
+                                </div>
+
+                                <div class="mt-6 space-y-3">
+                                    <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                        <svg class="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                                        <span>Kapasitas Hingga {{ $pkg->max_students }} Siswa PKL</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                        <svg class="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                                        <span>Kuota {{ $pkg->max_teachers }} Guru Pembimbing</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                                        <svg class="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                                        <span>Kuota {{ $pkg->max_mentors }} Mentor Industri</span>
+                                    </div>
+
+                                    @if (!empty($pkg->features))
+                                        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                            @foreach ($pkg->features as $feat)
+                                                <div class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                                                    <svg class="h-3.5 w-3.5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                                                    <span>{{ $feat }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="mt-8">
+                                <button
+                                    type="button"
+                                    @click='openApplyModal(@json($pkg))'
+                                    class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition hover:bg-blue-700 active:scale-95"
+                                >
+                                    <span>Ajukan Langganan {{ $pkg->name }}</span>
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
         {{-- 6. PENUTUP --}}
         <section class="border-t border-slate-200/80 py-16 text-center dark:border-slate-800/80 sm:py-20">
             <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
@@ -626,5 +729,125 @@
             </div>
         </div>
     </footer>
+
+    {{-- MODAL PENGAJUAN LANGGANAN SEKOLAH --}}
+    <div
+        x-show="applyModalOpen"
+        x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 bg-slate-900/80 backdrop-blur-sm transition-opacity"
+    >
+        <div
+            @click.outside="applyModalOpen = false"
+            class="relative w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:p-8"
+        >
+            {{-- Close Button --}}
+            <button
+                type="button"
+                @click="applyModalOpen = false"
+                class="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:hover:text-white"
+            >
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+
+            <div class="mb-6">
+                <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                    Form Pengajuan Langganan
+                </div>
+                <h3 class="mt-2 text-xl font-bold text-slate-900 dark:text-white">
+                    Permohonan Berlangganan Sekolah
+                </h3>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Isi data sekolah Anda. Tim Admin Platform akan memverifikasi permohonan dan menerbitkan akun Admin Sekolah.
+                </p>
+            </div>
+
+            {{-- Selected Package Banner --}}
+            <div x-show="selectedPackage" class="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-900/40 dark:bg-blue-950/30">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400" x-text="selectedPackage?.name"></span>
+                        <div class="text-sm font-bold text-slate-800 dark:text-white" x-text="selectedPackage?.price_formatted + ' / ' + selectedPackage?.duration_months + ' Bulan'"></div>
+                    </div>
+                    <span class="rounded-xl bg-blue-600 px-3 py-1 text-xs font-bold text-white shadow-sm">Dipilih</span>
+                </div>
+            </div>
+
+            <form action="{{ route('public.apply-subscription') }}" method="POST" class="space-y-4">
+                @csrf
+                <input type="hidden" name="package_id" :value="selectedPackage ? selectedPackage.id : ''">
+
+                {{-- Nama Sekolah --}}
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        Nama Sekolah / Institusi <span class="text-rose-500">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="school_name"
+                        required
+                        placeholder="Contoh: SMK Negeri 1 Jakarta"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    >
+                </div>
+
+                {{-- Email Kontak / Admin --}}
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        Email Kontak / Calon Admin Sekolah <span class="text-rose-500">*</span>
+                    </label>
+                    <input
+                        type="email"
+                        name="school_email"
+                        required
+                        placeholder="admin@smkn1jakarta.sch.id"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    >
+                </div>
+
+                {{-- Phone --}}
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        No. WhatsApp / Telepon Pengaju
+                    </label>
+                    <input
+                        type="text"
+                        name="school_phone"
+                        placeholder="081234567890"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    >
+                </div>
+
+                {{-- Address --}}
+                <div>
+                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        Alamat Sekolah
+                    </label>
+                    <textarea
+                        name="school_address"
+                        rows="2"
+                        placeholder="Jl. Budi Utomo No. 7, Jakarta Pusat"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    ></textarea>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        @click="applyModalOpen = false"
+                        class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition hover:bg-blue-700 active:scale-95"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
+                        <span>Kirim Pengajuan Langganan</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

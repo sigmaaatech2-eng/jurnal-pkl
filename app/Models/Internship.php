@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Journal;
 
 class Internship extends Model
 {
@@ -30,6 +29,26 @@ class Internship extends Model
             'start_date' => 'date',
             'end_date' => 'date',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::retrieved(function (Internship $internship) {
+            if ($internship->status === 'active' && $internship->end_date && $internship->end_date->isPast() && ! $internship->end_date->isToday()) {
+                $internship->status = 'completed';
+                $internship->saveQuietly();
+            }
+        });
+    }
+
+    /**
+     * Update otomatis status penempatan yang tanggal selesainya sudah lewat.
+     */
+    public static function syncExpiredStatuses(): void
+    {
+        static::where('status', 'active')
+            ->where('end_date', '<', now()->toDateString())
+            ->update(['status' => 'completed']);
     }
 
     /**
@@ -56,7 +75,6 @@ class Internship extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    
     public function journals(): HasMany
     {
         return $this->hasMany(Journal::class);

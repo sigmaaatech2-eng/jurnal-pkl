@@ -9,10 +9,10 @@
                 <span class="text-slate-600 dark:text-slate-300">Kelola Pengguna</span>
             </div>
             <h1 class="text-2xl font-bold tracking-tight text-slate-800 dark:text-white">
-                Kelola Pengguna Platform
+                Kelola Pengguna Administrator
             </h1>
             <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-                Daftar seluruh akun pengguna yang terdaftar di seluruh ekosistem platform PKL Online.
+                Kelola akun Administrator Platform dan Administrator Sekolah. (User Guru, Siswa, dan Mentor dikelola oleh masing-masing Admin Sekolah).
             </p>
         </div>
     </div>
@@ -28,24 +28,20 @@
     @endif
 
     {{-- SUMMARY CARDS --}}
-    <div class="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    <div class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {{-- Total --}}
         <a
             href="{{ route('admin-platform.users.index', ['page' => 1]) }}"
             class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 {{ !request('role') ? 'ring-2 ring-blue-500/30 dark:border-blue-500/40' : '' }}"
         >
-            <div class="text-xs font-semibold text-slate-400 dark:text-slate-500">Semua User</div>
+            <div class="text-xs font-semibold text-slate-400 dark:text-slate-500">Semua Admin</div>
             <div class="mt-2 text-2xl font-extrabold text-slate-800 dark:text-white">{{ $totalCount }}</div>
         </a>
 
         @foreach ($roles as $roleItem)
             @php
                 $colorMap = [
-                    'siswa' => 'blue',
-                    'guru_pembimbing' => 'emerald',
-                    'mentor' => 'amber',
                     'admin_sekolah' => 'purple',
-                    'kepala_sekolah' => 'rose',
                     'admin_platform' => 'indigo',
                 ];
                 $c = $colorMap[$roleItem->name] ?? 'slate';

@@ -72,6 +72,38 @@
                     </form>
                 </div>
 
+                {{-- GANTI PASSWORD --}}
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h3 class="mb-2 text-sm font-bold text-slate-800 dark:text-white">Ganti Password User</h3>
+                    <p class="text-xs text-slate-400 mb-4">Set password baru untuk akun pengguna ini.</p>
+
+                    <form action="{{ route('admin-platform.users.password', $user->id) }}" method="POST" class="space-y-3">
+                        @csrf
+                        @method('PUT')
+                        <div>
+                            <input
+                                type="password"
+                                name="password"
+                                required
+                                placeholder="Password Baru (min 6 karakter)"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            >
+                        </div>
+                        <div>
+                            <input
+                                type="password"
+                                name="password_confirmation"
+                                required
+                                placeholder="Konfirmasi Password Baru"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                            >
+                        </div>
+                        <button type="submit" class="w-full rounded-xl bg-amber-600 py-2.5 text-sm font-bold text-white shadow-md shadow-amber-500/20 hover:bg-amber-700 active:scale-95 transition">
+                            Perbarui Password
+                        </button>
+                    </form>
+                </div>
+
                 {{-- KONTROL KEAMANAN --}}
                 <div class="rounded-2xl border border-rose-100 bg-rose-50/50 p-6 shadow-sm dark:border-rose-900/30 dark:bg-rose-950/20">
                     <h3 class="mb-2 text-sm font-bold text-rose-700 dark:text-rose-400">Tindakan Keamanan</h3>
